@@ -1,0 +1,25 @@
+# GDF - entorno observado: Raspberry Pi ARM64, Debian 11, Python 3.9.
+# Versiones de dependencias directas encontradas en el equipo.
+# Instalacion: python3 -m pip install -r requirements.txt
+# Este archivo no es un lock completo ni ha sido probado en un entorno limpio.
+
+numpy==1.23.5
+opencv-contrib-python==4.9.0.80
+Pillow==8.1.2
+requests==2.31.0
+psutil==5.8.0
+msrest==0.7.1
+azure-cognitiveservices-vision-computervision==0.9.0
+tensorflow-cpu-aws==2.12.0
+tensorflow-object-detection-api==0.1.1
+protobuf==3.20.0
+telepot==12.7
+
+# Dependencias de Raspberry Pi instaladas mediante apt, fuera de pip:
+# sudo apt install python3-picamera2 python3-libcamera python3-serial
+# Versiones observadas: picamera2 0.3.12; pyserial 3.5b0.
+# Si se usa venv: crearlo con --system-site-packages para acceder a libcamera.
+# Se requiere conservar saved_model/ y label_map.pbtxt por separado.
+# Container.py requiere una version moderna de azure-storage-blob para
+# BlobServiceClient. El equipo tiene azure-storage 0.36.0 (API antigua):
+# ese modulo necesita resolver la incompatibilidad antes de habilitarlo.
