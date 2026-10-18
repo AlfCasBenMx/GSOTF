@@ -21,6 +21,94 @@ En Caucel6 el programa anterior estaba en `/home/pi/Desktop/GDF` y corría desde
 
 El instalador rechaza un `/opt/gdf` existente o sus servicios ya instalados; no es un actualizador. No borrar esas rutas para forzar una reinstalación. Una migración necesita revisar el equipo y preparar la reversión.
 
+### Comandos de respaldo usados en Caucel6
+
+Ejecutar en la Raspberry, como el usuario `pi`. Antes confirmar que la carpeta es realmente `~/Desktop/GDF`; cambiarla si el equipo usa otra ruta. Los comandos siguientes no detienen ni borran el lector.
+
+```bash
+hostname
+cat /etc/os-release
+uname -m
+cat /proc/device-tree/model; echo
+df -h /
+systemctl list-units --all 'gdf*' --no-pager
+pgrep -af 'MainPlate|MainHB|LiPER|launcher'
+```
+
+Respaldar programa, modelo y configuración, excluyendo imágenes y carpetas temporales que cambian mientras el lector trabaja:
+
+```bash
+mkdir -p ~/backups
+chmod 700 ~/backups
+respaldo="$HOME/backups/GDF-$(date +%Y%m%d-%H%M%S).tar.gz"
+
+(umask 077
+tar -czf "$respaldo" \
+  --exclude='GDF/SavedPlates' \
+  --exclude='GDF/ErrorOCR' \
+  --exclude='GDF/OCREvidence' \
+  --exclude='GDF/Logs' \
+  --exclude='GDF/TempImages' \
+  --exclude='GDF/TempSavedImages' \
+  --exclude='GDF/PlateRegionImage' \
+  --exclude='GDF/__pycache__' \
+  -C "$HOME/Desktop" GDF
+) &&
+tar -tzf "$respaldo" >/dev/null &&
+echo "Respaldo verificado: $respaldo"
+```
+
+Continuar solo si aparece `Respaldo verificado`. Si hay errores o avisos de archivos cambiando, revisar y repetir el respaldo antes del cambio. La verificación confirma que el archivo se puede leer; no es una prueba completa de restauración ni una copia consistente de datos en ejecución. Las fotos quedan en sus carpetas originales y no están duplicadas en este respaldo. El archivo incluye credenciales: mantenerlo privado y fuera de GitHub y del ZIP público.
+
+Guardar el arranque del usuario y los scripts auxiliares que encontramos en Caucel6:
+
+```bash
+arranque="$HOME/backups/arranque-$(date +%Y%m%d-%H%M%S)"
+mkdir -m 700 "$arranque"
+(umask 077; crontab -l > "$arranque/crontab.txt")
+for archivo in "$HOME/check_int.py" "$HOME/Bot.py"; do
+  if [ -f "$archivo" ]; then
+    (umask 077; cp "$archivo" "$arranque/")
+    chmod 600 "$arranque/$(basename "$archivo")"
+  fi
+done
+if [ -d "$HOME/.config/autostart" ]; then
+  (umask 077; tar -czf "$arranque/autostart.tar.gz" -C "$HOME/.config" autostart)
+fi
+echo "Copia de arranque: $arranque"
+```
+
+Si `crontab -l` dice que no existe crontab, registrarlo como ausente: no restaurar después el archivo vacío. Estos comandos cubren el arranque del usuario; si hay servicios systemd u otros mecanismos, respaldar sus unidades/configuración antes de modificarlos. No restaurar cron encima de cambios posteriores sin revisarlos.
+
+Comprobar el contenido esperado sin mostrar claves:
+
+```bash
+tar -tzf "$respaldo" | grep -E 'Config.xml|MainPlate|MainHB|saved_model|label_map'
+sha256sum "$respaldo" > "$respaldo.sha256"
+chmod 600 "$respaldo.sha256"
+sha256sum -c "$respaldo.sha256"
+```
+
+Si la configuración real está fuera de `Desktop/GDF`, respaldarla por separado con permisos privados; por ejemplo, `runtime.env` externo no queda incluido por estos comandos. No pegar su contenido en un chat.
+
+### Referencia de la migración realizada
+
+En Caucel6 se obtuvo `/home/pi/backups/GDF-20261018-151221.tar.gz`, se encontró Debian 11 ARM64/Python 3.9, una Pi 4 Model B Rev 1.2 y 43 GB libres. Cron contenía `check_int.py` y `Bot.py`; no había servicios `gdf` cargados ni carpeta de autoinicio del usuario. Son observaciones de ese equipo y esa sesión, no condiciones garantizadas para otra Raspberry.
+
+Después se instaló en `/opt/gdf`, se detuvo el lector anterior mediante **Stop en Thonny**, se ejecutó `check --hardware` y luego `start`. Se confirmó modelo, captura de cámara, primer fotograma y servicios activos/habilitados. La primera versión del instalador no pedía URL/token del monitor: se detectaron vacíos y se indicó completarlos manualmente. El paquete actual ya pide ambos. No se documentó aún confirmación de recepción de Caucel6 en el monitor ni de una placa real aceptada por Genyus.
+
+Para recuperar archivos sin sobrescribir el programa actual, usar la ruta exacta del respaldo guardado:
+
+```bash
+respaldo="$HOME/backups/GDF-20261018-151221.tar.gz"
+recuperacion="$(mktemp -d "$HOME/backups/recuperacion-XXXXXX")"
+chmod 700 "$recuperacion"
+tar -xzf "$respaldo" -C "$recuperacion"
+echo "Archivos recuperados en: $recuperacion/GDF"
+```
+
+Ese nombre de archivo es solo el ejemplo real de Caucel6; en otro equipo usar su propio respaldo. Para volver al lector anterior hay que detener primero los nuevos servicios y evitar dos lectores sobre la cámara. La carpeta original `~/Desktop/GDF` se conserva: una reversión operativa debe revisar también su arranque y probar cámara, lectura y entrega. No borrar la instalación nueva ni restaurar automáticamente sobre la anterior.
+
 ## 3. Descargar y verificar
 
 En una terminal de la Raspberry:
