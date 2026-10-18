@@ -16,6 +16,27 @@ import build_release
 
 
 class InstallerTests(unittest.TestCase):
+    def test_stage_progress_does_not_advance_while_waiting_or_on_failure(self):
+        with tempfile.TemporaryDirectory() as temp:
+            report = installer.Report(temp, 'install')
+            report.phase('PYTHON_DEPENDENCIES')
+            report.phase('PYTHON_DEPENDENCIES', elapsed=120)
+            report.phase('PYTHON_DEPENDENCIES', 'failed', 180)
+            data = json.loads((Path(temp) / 'installer-status.json').read_text())
+            self.assertEqual(data['progress_percent'], 35)
+            self.assertEqual(data['elapsed_seconds'], 180)
+            report.phase('PYTHON_DEPENDENCIES', 'completed')
+            self.assertEqual(report.progress, 65)
+            report.phase('ENVIRONMENT', 'completed')
+            self.assertEqual(report.progress, 65)
+
+    def test_full_progress_requires_successful_service_start(self):
+        with tempfile.TemporaryDirectory() as temp:
+            for command, percent in [('preflight', 5), ('install', 80), ('check', 90), ('start', 100)]:
+                report = installer.Report(temp, command)
+                report.phase('COMMAND_COMPLETED', 'completed')
+                self.assertEqual(report.progress, percent)
+
     def test_existing_environment_validated_as_service_user(self):
         import types
         with tempfile.TemporaryDirectory() as temp:

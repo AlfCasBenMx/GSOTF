@@ -139,3 +139,7 @@ de hashes comprueba integridad, no sustituye una firma del autor.
 Extrae el paquete y abre `Instalar_LIPER.desktop` en la Raspberry. Si el escritorio lo solicita, permite su ejecucion. El lanzador muestra el avance en una terminal y pide autorizacion de administrador. La ventana solicita el endpoint y la clave de Azure, la clave de Genyus y el nombre del equipo para el monitor; este nombre no cambia el hostname del sistema. Luego comprueba el hardware y arranca los servicios.
 
 El nombre admite de 3 a 40 caracteres. El instalador consulta su disponibilidad en el monitor. Si la consulta no esta disponible, muestra una advertencia y solo permite continuar mediante confirmacion explicita; en ese caso la unicidad no queda verificada. La consulta no reserva un nombre.
+
+## Porcentaje de avance
+
+La terminal y `gdf-reports/installer-status.json` muestran un porcentaje estimado por etapas: preparacion 0-5%, entorno y dependencias 5-75%, credenciales hasta 80%, comprobaciones hasta 90% y arranque correcto de los servicios hasta 100%. El porcentaje no mide bytes descargados ni tiempo restante. Durante una etapa larga se mantiene fijo y el tiempo transcurrido se actualiza cada 30 segundos. Un fallo no completa esa etapa ni muestra 100%.

@@ -25,6 +25,8 @@ FILES = ('MainPlateGSF.py', 'MainHBGSF.py', 'LiPER_NNP.py', 'Send_HB.py',
          'SendNotifications.py', 'ocr_evidence.py', 'device_identity.py')
 UNITS = ('gdf-reader.service', 'gdf-heartbeat.service')
 STEPS = {
+    'COMMAND_STARTED': 'Iniciando etapa de instalacion',
+    'COMMAND_COMPLETED': 'Etapa completada correctamente',
     'APT_INDEX': 'Actualizar lista de paquetes del sistema',
     'APT_DEPENDENCIES': 'Instalar librerias del sistema y de la camara',
     'VENV': 'Crear entorno de Python',
@@ -50,14 +52,35 @@ class Report:
         self.folder = Path(folder)
         self.data = {'schema': 1, 'command': command, 'utc': datetime.datetime.now(
             datetime.timezone.utc).isoformat(), 'checks': []}
+        self.progress = {'preflight': 0, 'install': 5, 'configure': 75,
+                         'check': 80, 'start': 90, 'diagnose': 0}.get(command, 0)
+
+    def percentage(self, code, state):
+        ranges = {'ENVIRONMENT': (5, 10), 'APT_INDEX': (10, 15),
+                  'APT_DEPENDENCIES': (15, 25), 'VENV': (25, 30),
+                  'PIP_BOOTSTRAP': (30, 35), 'PYTHON_DEPENDENCIES': (35, 65),
+                  'DETECTION_UTILITIES': (65, 70), 'CAMERA_GROUPS': (70, 72),
+                  'SYSTEMD_RELOAD': (72, 75), 'CREDENTIALS': (75, 80),
+                  'IMPORTS': (80, 83), 'MODEL': (83, 86), 'CAMERA': (86, 89)}
+        if code == 'COMMAND_COMPLETED' and state == 'completed':
+            target = {'preflight': 5, 'install': 80, 'configure': 80,
+                      'check': 90, 'start': 100, 'diagnose': 100}[self.data['command']]
+        else:
+            bounds = ranges.get(code, (self.progress, self.progress))
+            target = bounds[1] if state == 'completed' else bounds[0]
+        self.progress = max(self.progress, target)
+        return self.progress
 
     def phase(self, code, state='running', elapsed=0):
         label = STEPS.get(code, code)
         seconds = int(elapsed)
-        print('[%s] %s | %dm %02ds' % (state.upper(), label, seconds // 60, seconds % 60), flush=True)
+        percent = self.percentage(code, state)
+        print('[%s] %d%% | %s | %dm %02ds (avance por etapas)' %
+              (state.upper(), percent, label, seconds // 60, seconds % 60), flush=True)
         self.folder.mkdir(parents=True, exist_ok=True, mode=0o700)
         value = dict(command=self.data['command'], step=code, label=label,
                      status=state, elapsed_seconds=seconds,
+                     progress_percent=percent, progress_basis='installation_stages',
                      updated_at_utc=datetime.datetime.now(datetime.timezone.utc).isoformat())
         temporary = self.folder / 'installer-status.tmp'
         with temporary.open('w', encoding='utf-8') as stream:
@@ -626,11 +649,13 @@ def main(argv=None):
     report = Report(args.report_dir, args.command)
     status = 0
     try:
+        report.phase('COMMAND_STARTED')
         if args.command == 'preflight':
             if not compatibility(report):
                 raise Failure('INCOMPATIBLE_PLATFORM')
         else:
             globals()[args.command](args, report)
+        report.phase('COMMAND_COMPLETED', 'completed')
     except KeyboardInterrupt:
         report.add('INTERRUPTED', False, 'Run diagnose before retrying.')
         status = 130
