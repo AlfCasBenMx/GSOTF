@@ -1,0 +1,8 @@
+[Unit]
+Description=GDF image retention (20 days, 2 GiB free-space floor)
+
+[Service]
+Type=oneshot
+User=pi
+WorkingDirectory=/home/pi/Desktop/GDF
+ExecStart=/usr/bin/python3 /home/pi/Desktop/GDF/Deletefiles.py --apply --days 20 --min-free-gb 2

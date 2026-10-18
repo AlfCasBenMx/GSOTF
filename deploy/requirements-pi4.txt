@@ -1,0 +1,17 @@
+# New installs: Pi 4, Bullseye ARM64, Python 3.9. Camera libraries use apt.
+# protobuf differs from the legacy device to satisfy TensorFlow's metadata.
+numpy==1.23.5
+opencv-contrib-python==4.9.0.80
+Pillow==9.5.0
+requests==2.31.0
+# psutil 5.8 is supplied by Bullseye apt (python3-psutil), avoiding compilation.
+msrest==0.7.1
+azure-cognitiveservices-vision-computervision==0.9.0
+tensorflow-cpu-aws==2.12.0
+protobuf==3.20.3
+jax==0.4.25
+jaxlib==0.4.25
+scipy==1.12.0
+matplotlib==3.8.3
+contextlib2==21.6.0
+lxml==4.9.4

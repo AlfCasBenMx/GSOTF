@@ -1,0 +1,21 @@
+[Unit]
+Description=GDF heartbeat
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=600
+StartLimitBurst=3
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/Desktop/GDF
+Environment=GDF_CONFIG=/home/pi/Desktop/GDF/Config.xml
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=-/home/pi/.config/gdf/runtime.env
+ExecStart=/usr/bin/python3 /home/pi/Desktop/GDF/MainHBGSF.py
+Restart=on-failure
+RestartSec=15
+TimeoutStopSec=60
+
+[Install]
+WantedBy=multi-user.target

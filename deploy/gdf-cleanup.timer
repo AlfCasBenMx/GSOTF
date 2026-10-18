@@ -1,0 +1,10 @@
+[Unit]
+Description=Run GDF image retention hourly
+
+[Timer]
+OnBootSec=10min
+OnUnitActiveSec=1h
+Unit=gdf-cleanup.service
+
+[Install]
+WantedBy=timers.target

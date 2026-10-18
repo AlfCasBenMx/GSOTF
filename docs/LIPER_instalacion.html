@@ -1,0 +1,250 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>LIPER · Instalación y diagnóstico</title><style>body{font:17px/1.65 system-ui,Segoe UI,sans-serif;color:#19324c;background:#eef2f7;margin:0}main{max-width:1080px;margin:36px auto;background:white;padding:48px 56px;border-radius:16px}h1{font-size:34px;line-height:1.2;color:#103a59}h2{font-size:25px;margin-top:42px;border-top:1px solid #dce5ef;padding-top:24px}h3{font-size:20px}p,li{max-width:1000px}table{border-collapse:collapse;width:100%;font-size:15px;margin:20px 0}th,td{padding:12px;text-align:left;vertical-align:top;border:1px solid #d4dfe9}th{background:#eaf1f8}tr:nth-child(even){background:#fafbfd}code{font-family:Consolas,monospace;font-size:.87em;overflow-wrap:anywhere;background:#edf2f7;padding:2px 4px}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#142d43;color:#eff7ff;border-radius:9px;padding:20px;font-size:14px;line-height:1.5}pre code{background:transparent;padding:0}.diagram{margin:24px 0;overflow:auto}.diagram svg{display:block;width:100%;height:auto;min-width:650px}a{color:#0868a4}.tag{font-size:13px;letter-spacing:.06em;color:#54728b}nav{padding:14px;background:#f1f6fa;border-radius:8px}nav a{margin-right:20px}footer{font-size:13px;color:#5a7084;border-top:1px solid #dce5ef;margin-top:42px;padding-top:16px}@media(max-width:750px){main{margin:0;padding:24px 18px;border-radius:0}h1{font-size:28px}table{display:block;overflow:auto}}@media print{body{background:white;font-size:11pt}main{padding:0;margin:0;max-width:none}nav{display:none}h2{break-after:avoid}pre,table{font-size:9pt}.diagram svg{min-width:0;max-height:235mm}a{color:inherit}footer{font-size:9pt}}</style></head><body><main><div class="tag">LIPER / GSOTF · DOCUMENTACIÓN · 18 OCT 2026</div><nav><a href="LIPER_funcionamiento.html">Abrir el otro manual</a><a href="INSTALACION.md">Versión editable Markdown</a></nav><h1>LIPER / GSOTF — Instalación y puesta en marcha</h1>
+<p>Versión de referencia: 18 de octubre de 2026. Guía para un equipo nuevo; incluye una sección separada para consultar la Raspberry que ya está operando.</p>
+<h2>1. Requisitos y alcance probado</h2>
+<table>
+<thead>
+<tr>
+<th>Componente</th>
+<th>Referencia</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Equipo</td>
+<td>Raspberry Pi 4 Model B, como Caucel4</td>
+</tr>
+<tr>
+<td>Sistema</td>
+<td>Bullseye / Debian 11, 64 bits (<code>aarch64</code>)</td>
+</tr>
+<tr>
+<td>Python</td>
+<td>3.9</td>
+</tr>
+<tr>
+<td>Cámara</td>
+<td>IMX708 con enfoque automático, como la cámara existente</td>
+</tr>
+<tr>
+<td>Espacio</td>
+<td>El instalador exige al menos 8 GiB libres; reservar más espacio para las fotos de operación</td>
+</tr>
+<tr>
+<td>Usuario</td>
+<td>Usuario normal, por ejemplo <code>pi</code>, con acceso a sudo</td>
+</tr>
+<tr>
+<td>Red</td>
+<td>Necesaria para Azure, Genyus y el monitor; también para descargar dependencias si falta un entorno compatible</td>
+</tr>
+</tbody>
+</table>
+<p>El mismo modelo de Raspberry con otra versión de sistema operativo no garantiza compatibilidad. El instalador rechaza otras plataformas para evitar una instalación no validada. Tailscale y AnyDesk son opcionales para soporte remoto y se configuran aparte; no forman parte del procesamiento de matrículas.</p>
+<p><strong>Estado de validación:</strong> se probó la instalación reutilizando el entorno del equipo existente y se puso en operación esa copia. La instalación completa de dependencias en una tarjeta limpia sigue pendiente de certificar. El primer intento de crear el entorno descargó/descomprimió librerías grandes y degradó el acceso remoto; se detuvo. No prometer una duración fija para instalaciones nuevas.</p>
+<h2>2. Diagrama del instalador</h2>
+<div class="diagram"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 1580" role="img" aria-label="Flujo de instalación LIPER"><title>Flujo de instalación LIPER</title><defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8" fill="#526781"/></marker></defs><rect width="1120" height="1580" fill="#f6f8fc"/><text x="370" y="43" text-anchor="middle" font-family="Arial,sans-serif" font-size="23" font-weight="700" fill="#152d47">INSTALACIÓN Y PUESTA EN MARCHA</text><rect x="70" y="75" width="600" height="75" rx="14" fill="#ffffff" stroke="#b8c9de" stroke-width="2"/><text x="370.0" y="118.5" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">Ejecutar instalador</text><rect x="70" y="180" width="600" height="75" rx="14" fill="#ffffff" stroke="#b8c9de" stroke-width="2"/><text x="370.0" y="210.5" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">Validar plataforma, paquete,</text><text x="370.0" y="236.5" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">modelo, espacio y destino nuevo</text><rect x="70" y="290" width="600" height="75" rx="14" fill="#ffffff" stroke="#b8c9de" stroke-width="2"/><text x="370.0" y="333.5" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">Buscar entornos existentes</text><polyline points="370,150 370,180" fill="none" stroke="#526781" stroke-width="2.5" marker-end="url(#arrow)"/><polyline points="370,255 370,290" fill="none" stroke="#526781" stroke-width="2.5" marker-end="url(#arrow)"/><polyline points="370,365 370,405" fill="none" stroke="#526781" stroke-width="2.5" marker-end="url(#arrow)"/><polygon points="370.0,405 670,455.0 370.0,505 70,455.0" fill="#fff1ce" stroke="#d8ac40" stroke-width="2"/><text x="370.0" y="448.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">¿Importaciones y versiones</text><text x="370.0" y="474.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">compatibles para el usuario?</text><rect x="70" y="555" width="280" height="100" rx="14" fill="#e3f4ef" stroke="#81bbac" stroke-width="2"/><text x="210.0" y="598.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">Reutilizar entorno</text><text x="210.0" y="624.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">Sin apt ni pip</text><rect x="390" y="555" width="280" height="100" rx="14" fill="#ffffff" stroke="#b8c9de" stroke-width="2"/><text x="530.0" y="598.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">Crear entorno nuevo</text><text x="530.0" y="624.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">Instalar dependencias</text><polyline points="370,505 210,530 210,555" fill="none" stroke="#526781" stroke-width="2.5" marker-end="url(#arrow)"/><text x="210" y="521" text-anchor="middle" font-family="Arial,sans-serif" font-size="16" font-weight="400" fill="#405a75">Sí</text><polyline points="370,505 530,530 530,555" fill="none" stroke="#526781" stroke-width="2.5" marker-end="url(#arrow)"/><text x="530" y="521" text-anchor="middle" font-family="Arial,sans-serif" font-size="16" font-weight="400" fill="#405a75">No</text><polyline points="210,655 210,690 370,690 370,720" fill="none" stroke="#526781" stroke-width="2.5" marker-end="url(#arrow)"/><polyline points="530,655 530,690 370,690" fill="none" stroke="#526781" stroke-width="2.5" marker-end="url(#arrow)"/><rect x="70" y="720" width="600" height="80" rx="14" fill="#ffffff" stroke="#b8c9de" stroke-width="2"/><text x="370.0" y="753.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">Copiar código y modelo;</text><text x="370.0" y="779.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">preparar carpetas y servicios</text><rect x="70" y="845" width="600" height="80" rx="14" fill="#ffffff" stroke="#b8c9de" stroke-width="2"/><text x="370.0" y="878.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">Pedir credenciales y guardar configuración</text><text x="370.0" y="904.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">Ventana o terminal interactiva</text><rect x="70" y="970" width="600" height="85" rx="14" fill="#ffffff" stroke="#b8c9de" stroke-width="2"/><text x="370.0" y="1005.5" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">Comprobar configuración, DNS/TLS,</text><text x="370.0" y="1031.5" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">imports, modelo y cámara libre</text><rect x="70" y="1100" width="600" height="80" rx="14" fill="#ffffff" stroke="#b8c9de" stroke-width="2"/><text x="370.0" y="1146.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">Arrancar lector y heartbeat</text><polygon points="370.0,1225 670,1275.0 370.0,1325 70,1275.0" fill="#fff1ce" stroke="#d8ac40" stroke-width="2"/><text x="370.0" y="1268.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">¿Llega un fotograma reciente</text><text x="370.0" y="1294.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">del PID actual del lector?</text><rect x="70" y="1390" width="600" height="85" rx="14" fill="#e3f4ef" stroke="#81bbac" stroke-width="2"/><text x="370.0" y="1425.5" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">Habilitar arranque automático;</text><text x="370.0" y="1451.5" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">verificar operación real</text><polyline points="370,800 370,845" fill="none" stroke="#526781" stroke-width="2.5" marker-end="url(#arrow)"/><polyline points="370,925 370,970" fill="none" stroke="#526781" stroke-width="2.5" marker-end="url(#arrow)"/><polyline points="370,1055 370,1100" fill="none" stroke="#526781" stroke-width="2.5" marker-end="url(#arrow)"/><polyline points="370,1180 370,1225" fill="none" stroke="#526781" stroke-width="2.5" marker-end="url(#arrow)"/><polyline points="370,1325 370,1390" fill="none" stroke="#526781" stroke-width="2.5" marker-end="url(#arrow)"/><text x="410" y="1361" text-anchor="middle" font-family="Arial,sans-serif" font-size="16" font-weight="400" fill="#152d47">Sí</text><rect x="770" y="180" width="280" height="110" rx="14" fill="#fce8e5" stroke="#d5948c" stroke-width="2"/><text x="910.0" y="215.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">Si falla una validación:</text><text x="910.0" y="241.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">detener el proceso</text><text x="910.0" y="267.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">y guardar reporte</text><rect x="770" y="405" width="280" height="130" rx="14" fill="#edf1f7" stroke="#b8c9de" stroke-width="2"/><text x="910.0" y="437.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">Un sistema limpio aún</text><text x="910.0" y="463.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">requiere validación completa.</text><text x="910.0" y="489.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">Instalar librerías grandes</text><text x="910.0" y="515.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">puede tardar.</text><rect x="770" y="845" width="280" height="80" rx="14" fill="#edf1f7" stroke="#b8c9de" stroke-width="2"/><text x="910.0" y="878.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">Claves ocultas</text><text x="910.0" y="904.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">No incluirlas en GitHub</text><rect x="770" y="970" width="280" height="110" rx="14" fill="#fce8e5" stroke="#d5948c" stroke-width="2"/><text x="910.0" y="1005.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">Si falla, revisar reporte.</text><text x="910.0" y="1031.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">No arrancar hasta</text><text x="910.0" y="1057.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">resolver la causa.</text><polyline points="670,1012 770,1012" fill="none" stroke="#526781" stroke-width="2.5" marker-end="url(#arrow)"/><rect x="770" y="1215" width="280" height="130" rx="14" fill="#fce8e5" stroke="#d5948c" stroke-width="2"/><text x="910.0" y="1260.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">Si falla el arranque:</text><text x="910.0" y="1286.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">detener ambos servicios</text><text x="910.0" y="1312.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">y revisar diagnóstico.</text><polyline points="670,1275 770,1275" fill="none" stroke="#526781" stroke-width="2.5" marker-end="url(#arrow)"/><text x="720" y="1256" text-anchor="middle" font-family="Arial,sans-serif" font-size="16" font-weight="400" fill="#405a75">No</text><rect x="70" y="1510" width="980" height="50" rx="14" fill="#edf1f7" stroke="#b8c9de" stroke-width="2"/><text x="560.0" y="1541.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">Equipo en producción: usar promoción controlada y respaldo, no reinstalar encima.</text></svg></div>
+
+<p>Cada comando genera su reporte. La configuración y las comprobaciones previas pueden fallar antes del arranque. No es un actualizador de producción: rechaza el destino o unidades existentes. Si se reutiliza el entorno, se verifican importaciones y versiones de referencia, no basta con encontrar una carpeta.</p>
+<h2>3. Preparar el equipo nuevo</h2>
+<ol>
+<li>Instalar la imagen de sistema compatible, crear el usuario y configurar red y hora/NTP.</li>
+<li>Conectar la cámara con el equipo apagado, según las indicaciones del fabricante, y arrancar.</li>
+<li>Copiar <code>GDF_instalador_pi4.tar.gz</code> y su archivo <code>.sha256</code> a la misma carpeta de la Raspberry.</li>
+<li>Tener disponibles el endpoint de Azure, la clave de Azure y la clave de Genyus autorizadas para ese equipo.</li>
+</ol>
+<p>El paquete incluye código, modelo, etiquetas y scripts de instalación. No incluye credenciales ni fotos del equipo original. Los hashes comprueban integridad; verificar el checksum por una fuente de confianza, porque no sustituyen una firma del autor.</p>
+<h2>4. Instalar</h2>
+<p>Ejecutar desde la carpeta donde se copiaron el paquete y su checksum:</p>
+<pre><code class="language-bash">sha256sum -c GDF_instalador_pi4.tar.gz.sha256
+tar -xzf GDF_instalador_pi4.tar.gz
+cd gdf-installer
+python3 deploy/pi_installer.py preflight
+sudo python3 deploy/pi_installer.py install --user pi
+</code></pre>
+<p>Si el checksum falla, no continuar. Cambiar <code>pi</code> por el usuario real; no usar <code>root</code> como cuenta del servicio. El destino predeterminado es <code>/opt/gdf</code>.</p>
+<p>El instalador busca primero un Python compatible en ubicaciones conocidas, incluidas <code>.venv</code> del paquete, <code>.venvs/gdf</code> del usuario, la instalación de escritorio GDF, <code>/opt/gdf/.venv</code> y <code>/usr/bin/python3</code>. Ejecuta la comprobación como el usuario del servicio para incluir sus librerías locales. Valida Python 3.9, TensorFlow 2.12, NumPy 1.23.5, protobuf 3.20 e importaciones de cámara, detección, OCR, heartbeat y ventana de configuración.</p>
+<p>Si encuentra un entorno válido, lo reutiliza sin apt ni pip. Si no, instala dependencias y crea <code>.venv</code> con acceso a los paquetes del sistema necesarios para la cámara. Las versiones principales están fijadas, pero no hay un lock completo de todas las dependencias transitivas ni un paquete offline. Los pasos pip tienen prioridad reducida de CPU y disco; aun así pueden consumir tiempo y recursos.</p>
+<p>Opciones útiles, para equipos nuevos o una prueba aislada:</p>
+<table>
+<thead>
+<tr>
+<th>Opción</th>
+<th>Uso</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--root /ruta/dedicada</code></td>
+<td>Cambiar destino; repetirlo en los comandos posteriores</td>
+</tr>
+<tr>
+<td><code>--python /ruta/al/python</code></td>
+<td>Validar y reutilizar un intérprete concreto; se detiene si no sirve</td>
+</tr>
+<tr>
+<td><code>--fresh-env</code></td>
+<td>Forzar un entorno nuevo</td>
+</tr>
+<tr>
+<td><code>--terminal</code></td>
+<td>Introducir claves en terminal en vez de ventana</td>
+</tr>
+<tr>
+<td><code>--skip-config</code></td>
+<td>Instalar y configurar las claves posteriormente</td>
+</tr>
+<tr>
+<td><code>--report-dir /ruta</code></td>
+<td>Elegir carpeta de reportes</td>
+</tr>
+<tr>
+<td><code>--isolated-test</code></td>
+<td>Prueba en directorio nuevo, con librerías del sistema existentes y sin registrar servicios ni ejecutar apt</td>
+</tr>
+</tbody>
+</table>
+<p><code>--python</code> y <code>--fresh-env</code> son excluyentes. Una copia creada con <code>--isolated-test</code> no se puede arrancar mediante <code>start</code>: necesita una promoción controlada, como se hizo en Caucel4. No ejecutar instalaciones paralelas ni pruebas de cámara en un equipo operativo sin planificar la interrupción.</p>
+<h2>5. Introducir credenciales</h2>
+<p>Al finalizar la instalación aparece una ventana con estos campos:</p>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Dato requerido</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Endpoint HTTPS de Azure OCR</td>
+<td>URL base del recurso de Azure, sin claves ni parámetros</td>
+</tr>
+<tr>
+<td>Clave de Azure OCR</td>
+<td>Clave de acceso al recurso</td>
+</tr>
+<tr>
+<td>Clave de Genyus</td>
+<td>Clave autorizada para autenticarse y enviar lecturas/heartbeat</td>
+</tr>
+</tbody>
+</table>
+<p>Las claves aparecen ocultas. Pulsar <strong>Guardar</strong>. Si no hay escritorio accesible, se solicitan en una terminal interactiva. Cancelar deja el software instalado y la configuración pendiente; no arranca los servicios.</p>
+<p>Para volver a abrir la configuración:</p>
+<pre><code class="language-bash">sudo python3 /opt/gdf/deploy/pi_installer.py configure
+</code></pre>
+<p>Se guarda en <code>/opt/gdf/Config.xml</code>, con permiso 600 y propiedad del usuario del servicio. No poner claves en argumentos de comandos, GitHub ni capturas de pantalla. El número de serie se obtiene automáticamente del hardware; la etiqueta pública del monitor es manual.</p>
+<h2>6. Configurar el monitor opcional</h2>
+<p>Editar localmente <code>/opt/gdf/runtime.env</code> y completar, si se quiere el segundo heartbeat:</p>
+<pre><code class="language-ini">GDF_HEALTH_URL=URL_HTTPS_DEL_RECEPTOR
+GDF_HEALTH_TOKEN=TOKEN_DE_ESCRITURA
+GDF_HEALTH_LABEL=NombreDelEquipo
+</code></pre>
+<p>Los valores anteriores son marcadores: sustituirlos por los autorizados. Conservar permiso 600 y propiedad del usuario del servicio. Es un archivo de entorno de systemd; no ejecutarlo con <code>source</code>. No cambiar el nombre del equipo original al preparar otro: asignar una etiqueta identificable a cada Raspberry. Si la URL queda vacía, el segundo destino está desactivado.</p>
+<h2>7. Comprobar y arrancar</h2>
+<p>En un equipo nuevo, con la cámara libre:</p>
+<pre><code class="language-bash">sudo python3 /opt/gdf/deploy/pi_installer.py check --hardware
+sudo python3 /opt/gdf/deploy/pi_installer.py start
+systemctl is-active gdf-reader.service gdf-heartbeat.service
+</code></pre>
+<p><code>check --hardware</code> valida configuración y permisos, conexiones DNS/TLS, imports, carga e inferencia sintética del modelo y captura de cámara en memoria. No envía esa imagen al OCR ni a Genyus. DNS/TLS no confirma que las claves sean válidas. No ejecutar esta prueba mientras otro proceso use la cámara.</p>
+<p><code>start</code> repite las comprobaciones, inicia ambos servicios y espera hasta 180 segundos por un fotograma reciente del PID actual. Si falla el arranque, intenta detener ambos servicios. Tras la comprobación habilita el inicio automático. Si el equipo es más lento o tiene problemas, conservar el reporte y revisar la causa; no asumir que basta con esperar indefinidamente.</p>
+<p>Después verificar:</p>
+<ul>
+<li>Fotogramas recientes en <code>.health.json</code>, con el PID del lector actual.</li>
+<li>Heartbeat recibido por cada destino configurado.</li>
+<li>Una lectura nueva con foto y evidencia; revisar la recepción real en Genyus cuando haya un vehículo.</li>
+<li>Temperatura, alimentación y espacio libre.</li>
+</ul>
+<p>Un servicio «active», un heartbeat recibido o una autenticación correcta no demuestran por sí solos que una placa concreta haya llegado a Genyus. Las pruebas con fotos históricas deben separar OCR de envío, para no crear eventos históricos como si fueran nuevos.</p>
+<h2>8. Progreso, errores y reporte para soporte</h2>
+<p>El instalador muestra el paso al comenzar, el resultado y el tiempo. Durante los comandos largos controlados actualiza el tiempo cada 30 segundos. Algunas comprobaciones, como la búsqueda de entorno, muestran inicio y fin; no hay un porcentaje fiable de descarga.</p>
+<p>En la carpeta de reportes, por defecto <code>gdf-reports/</code> desde el directorio de ejecución:</p>
+<table>
+<thead>
+<tr>
+<th>Archivo</th>
+<th>Uso</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>installer-status.json</code></td>
+<td>Último paso, estado y tiempo registrado</td>
+</tr>
+<tr>
+<td><code>gdf-diagnostic-*.json</code></td>
+<td>Reporte de comprobaciones; la terminal indica <code>REPORT=...</code></td>
+</tr>
+<tr>
+<td><code>/opt/gdf/installation.json</code></td>
+<td>Estado de instalación, usuario e intérprete seleccionado</td>
+</tr>
+</tbody>
+</table>
+<p>Para diagnóstico sin detener los servicios:</p>
+<pre><code class="language-bash">sudo python3 /opt/gdf/deploy/pi_installer.py diagnose
+</code></pre>
+<p>Compartir el archivo indicado por <code>REPORT=...</code>. Está diseñado para omitir claves, fotos, placas, IP, serie y logs crudos. Se crea con permiso 600 y no se envía automáticamente. Si se interrumpe el proceso bruscamente o falla el acceso al disco, puede no haber reporte final; conservar el último estado y el mensaje visible.</p>
+<table>
+<thead>
+<tr>
+<th>Problema</th>
+<th>Qué revisar</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Plataforma incompatible</td>
+<td>Pi 4, ARM64, Bullseye y Python 3.9</td>
+</tr>
+<tr>
+<td>Destino o servicio existente</td>
+<td>No reinstalar encima de producción; revisar el destino y su respaldo</td>
+</tr>
+<tr>
+<td>Paquete no disponible / conflicto</td>
+<td>Código de etapa y categoría del reporte; versión del sistema y conexión a repositorios</td>
+</tr>
+<tr>
+<td>Cámara ocupada</td>
+<td>Otro lector, Thonny u otra aplicación puede estar utilizándola</td>
+</tr>
+<tr>
+<td>Falta configuración</td>
+<td>Ejecutar <code>configure</code> y completar los tres campos</td>
+</tr>
+<tr>
+<td>Azure/Genyus no accesible</td>
+<td>Red, DNS, hora del sistema y TLS; luego validar autenticación por separado</td>
+</tr>
+<tr>
+<td>No aparece ventana</td>
+<td>Usar una terminal interactiva y <code>configure --terminal</code></td>
+</tr>
+<tr>
+<td>Instalación lenta o SSH degradado</td>
+<td>Revisar CPU, memoria, disco y red; evitar repetir descargas en paralelo y preferir un entorno compatible existente</td>
+</tr>
+</tbody>
+</table>
+<p>Para inspección local se puede usar <code>sudo journalctl -u gdf-reader.service -n 50</code>. Los logs pueden contener matrículas; no adjuntarlos sin revisar. No compartir <code>Config.xml</code>, <code>runtime.env</code> ni el TXT de credenciales como diagnóstico.</p>
+<h2>9. Consultar la Raspberry actual</h2>
+<p>En Caucel4 la carpeta activa es <code>/opt/gdf-test-reuse-20261018</code>, no <code>/opt/gdf</code>. Para diagnóstico de ese equipo:</p>
+<pre><code class="language-bash">sudo python3 /opt/gdf-test-reuse-20261018/deploy/pi_installer.py diagnose --root /opt/gdf-test-reuse-20261018
+systemctl status gdf-reader.service gdf-heartbeat.service
+</code></pre>
+<p>No ejecutar <code>install</code> otra vez sobre este equipo. La promoción a producción se hizo con respaldo y verificaciones adicionales; el instalador empaquetado puede contener mejoras posteriores al script que quedó copiado en ese directorio. Las credenciales reales permanecen privadas y no forman parte de estos documentos.</p>
+<h2>10. Respaldo y reversión de Caucel4</h2>
+<p>Código anterior: <code>/home/pi/Desktop/GDF</code>. Respaldo del cambio: <code>/home/pi/backups/switch-installed-20261018</code>. Contiene unidades de servicio y <code>old-software.tar.gz</code> con código, modelo y configuración privada; no publicarlo. No es una imagen completa de la tarjeta ni un respaldo de todas las fotografías.</p>
+<p>Solo si se decide revertir el cambio de este equipo, ejecutar:</p>
+<pre><code class="language-bash">sudo systemctl stop gdf-heartbeat.service gdf-reader.service
+sudo cp /home/pi/backups/switch-installed-20261018/gdf-reader.service /etc/systemd/system/gdf-reader.service
+sudo cp /home/pi/backups/switch-installed-20261018/gdf-heartbeat.service /etc/systemd/system/gdf-heartbeat.service
+sudo systemctl daemon-reload
+sudo systemctl start gdf-reader.service gdf-heartbeat.service
+</code></pre>
+<p>Esperar la carga del modelo y comprobar el estado y los fotogramas recientes en la carpeta anterior. No eliminar las carpetas de fotos: la nueva copia usa enlaces a ese historial. La limpieza automática permanece desactivada y los archivos temporales tienen una limpieza independiente.</p>
+<h2>11. Preparar un nuevo paquete desde el repositorio</h2>
+<pre><code class="language-bash">python3 deploy/build_release.py --model-root /ruta/GDF --output GDF_instalador_pi4.tar.gz
+</code></pre>
+<p><code>/ruta/GDF</code> debe contener <code>saved_model/</code> y <code>label_map.pbtxt</code>. El constructor usa una lista explícita de archivos e incluye un manifiesto SHA256; excluye configuración real, fotos y logs. Revisar siempre los archivos antes de publicar. El repositorio no debe incluir <code>credentials-local/</code>. El despliegue automático mediante GitHub Actions todavía no está conectado.</p><footer>Documento sin credenciales. Diagramas SVG incluidos: puede consultarse sin conexión a Internet. Las rutas y el estado operativo describen la referencia documentada, no una comprobación en tiempo real.</footer></main></body></html>

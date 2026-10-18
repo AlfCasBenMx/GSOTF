@@ -1,0 +1,33 @@
+﻿
+# Credenciales locales de la Raspberry; nunca versionar
+/credentials-local/
+
+# Runtime configuration and evidence stay on the device.
+Config.xml
+.env
+*.env
+!deploy/runtime.example.env
+*.pem
+*.key
+*.db
+*.db-*
+__pycache__/
+*.pyc
+.venv/
+Logs/
+Exceptions/
+InternetConnection/
+mylogs*/
+SavedPlates/
+ErrorOCR/
+TempImages/
+TempSavedImages/
+PlateRegionImage/
+saved_model/
+.runtime.lock
+.health.json
+.health.tmp
+
+OCREvidence/
+gdf-reports/
+installation.json

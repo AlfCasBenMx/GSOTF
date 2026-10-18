@@ -1,42 +1,27 @@
-import os, fileinput, sys, shutil, glob, time, datetime, cv2, requests, json, warnings, threading, psutil, math
-
-
-
+"""Independent heartbeat process, with graceful shutdown."""
+import signal
+import threading
+import time
+import HandlingEvents as events
 import StartSettings
-import LiPER_NNP
-import HandlingEvents as myEvent
-import Send_HB as HB
 
 
-
-time_LastPlate=time.time()
-x_previous, y_previous=0,0
-
-''' SET GLOBAL VARIABLES '''
-StartSettings.startVar()
-''' END SET GLOBAL VARIABLES '''
-
-
-
-try:
-
-    
-t1= time.time()
-t1log= time.time()
-try:
-  while True:
-
-    dthb = time.time()-t1   
-   
-            
-    if dthb >=  30.0:            
-        t1 =time.time()
-        myEvent.logSytem()
+def main():
+    log = events.setup_logging()
+    StartSettings.startVar(required=("genyusKey", "serialLiper"))
+    import Send_HB as heartbeat
+    stop = threading.Event()
+    signal.signal(signal.SIGTERM, lambda *_: stop.set())
+    signal.signal(signal.SIGINT, lambda *_: stop.set())
+    while not stop.is_set():
+        started = time.monotonic()
         try:
-            HB.HBeat()
-        except Exception as errorHb:
-            myEvent.logException(errorHb)
-    time.sleep(3)
+            events.logSytem()
+            heartbeat.HBeat()
+        except Exception:
+            log.exception("Heartbeat failed")
+        stop.wait(max(0, 30 - (time.monotonic() - started)))
 
-except Exception as errorGral:
-    #print(errorGral)
+
+if __name__ == "__main__":
+    main()

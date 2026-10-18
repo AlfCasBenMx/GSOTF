@@ -1,0 +1,165 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>LIPER · Funcionamiento de la aplicación</title><style>body{font:17px/1.65 system-ui,Segoe UI,sans-serif;color:#19324c;background:#eef2f7;margin:0}main{max-width:1080px;margin:36px auto;background:white;padding:48px 56px;border-radius:16px}h1{font-size:34px;line-height:1.2;color:#103a59}h2{font-size:25px;margin-top:42px;border-top:1px solid #dce5ef;padding-top:24px}h3{font-size:20px}p,li{max-width:1000px}table{border-collapse:collapse;width:100%;font-size:15px;margin:20px 0}th,td{padding:12px;text-align:left;vertical-align:top;border:1px solid #d4dfe9}th{background:#eaf1f8}tr:nth-child(even){background:#fafbfd}code{font-family:Consolas,monospace;font-size:.87em;overflow-wrap:anywhere;background:#edf2f7;padding:2px 4px}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#142d43;color:#eff7ff;border-radius:9px;padding:20px;font-size:14px;line-height:1.5}pre code{background:transparent;padding:0}.diagram{margin:24px 0;overflow:auto}.diagram svg{display:block;width:100%;height:auto;min-width:650px}a{color:#0868a4}.tag{font-size:13px;letter-spacing:.06em;color:#54728b}nav{padding:14px;background:#f1f6fa;border-radius:8px}nav a{margin-right:20px}footer{font-size:13px;color:#5a7084;border-top:1px solid #dce5ef;margin-top:42px;padding-top:16px}@media(max-width:750px){main{margin:0;padding:24px 18px;border-radius:0}h1{font-size:28px}table{display:block;overflow:auto}}@media print{body{background:white;font-size:11pt}main{padding:0;margin:0;max-width:none}nav{display:none}h2{break-after:avoid}pre,table{font-size:9pt}.diagram svg{min-width:0;max-height:235mm}a{color:inherit}footer{font-size:9pt}}</style></head><body><main><div class="tag">LIPER / GSOTF · DOCUMENTACIÓN · 18 OCT 2026</div><nav><a href="LIPER_instalacion.html">Abrir el otro manual</a><a href="FUNCIONAMIENTO.md">Versión editable Markdown</a></nav><h1>LIPER / GSOTF — Funcionamiento de la aplicación</h1>
+<p>Versión de referencia: 18 de octubre de 2026. Documento basado en el código y en las comprobaciones del equipo Caucel4.</p>
+<h2>1. Qué hace</h2>
+<p>La Raspberry captura imágenes de la cámara, localiza posibles matrículas con un modelo TensorFlow y envía un recorte a Azure OCR. Después filtra el texto y envía las lecturas aceptadas a Genyus. Otro proceso independiente envía el estado de salud a Genyus y, si está configurado, al monitor web.</p>
+<p>La detección de la región ocurre en la Raspberry. La lectura de los caracteres ocurre en Azure. Genyus recibe texto y datos del dispositivo; el flujo principal no le envía la fotografía.</p>
+<h2>2. Diagrama de flujo</h2>
+<div class="diagram"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 1470" role="img" aria-label="Flujo de la aplicación LIPER"><title>Flujo de la aplicación LIPER</title><defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8" fill="#526781"/></marker></defs><rect width="1120" height="1470" fill="#f6f8fc"/><text x="350" y="42" text-anchor="middle" font-family="Arial,sans-serif" font-size="22" font-weight="700" fill="#152d47">LECTOR DE MATRÍCULAS</text><text x="885" y="41" text-anchor="middle" font-family="Arial,sans-serif" font-size="21" font-weight="700" fill="#152d47">HEARTBEAT INDEPENDIENTE</text><rect x="70" y="75" width="560" height="65" rx="14" fill="#e3f4ef" stroke="#81bbac" stroke-width="2"/><text x="350.0" y="113.5" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">Iniciar lector, cámara y modelo</text><rect x="70" y="175" width="560" height="65" rx="14" fill="#ffffff" stroke="#b8c9de" stroke-width="2"/><text x="350.0" y="213.5" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">Capturar fotograma</text><rect x="70" y="275" width="560" height="65" rx="14" fill="#ffffff" stroke="#b8c9de" stroke-width="2"/><text x="350.0" y="313.5" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">Ejecutar detector TensorFlow</text><polygon points="350.0,375 630,430.0 350.0,485 70,430.0" fill="#fff1ce" stroke="#d8ac40" stroke-width="2"/><text x="350.0" y="436.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">¿Hay detecciones ≥ 0.45?</text><rect x="70" y="525" width="560" height="80" rx="14" fill="#ffffff" stroke="#b8c9de" stroke-width="2"/><text x="350.0" y="558.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">Elegir última detección</text><text x="350.0" y="584.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">y preparar recorte con CLAHE</text><polygon points="350.0,650 630,700.0 350.0,750 70,700.0" fill="#fff1ce" stroke="#d8ac40" stroke-width="2"/><text x="350.0" y="693.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">¿Control de repetición permite</text><text x="350.0" y="719.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">y trabajador OCR libre?</text><rect x="70" y="790" width="560" height="80" rx="14" fill="#ffffff" stroke="#b8c9de" stroke-width="2"/><text x="350.0" y="823.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">Preservar foto completa</text><text x="350.0" y="849.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">y bytes exactos del recorte</text><rect x="70" y="915" width="560" height="65" rx="14" fill="#ffffff" stroke="#b8c9de" stroke-width="2"/><text x="350.0" y="953.5" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">Azure OCR lee el recorte</text><rect x="70" y="1020" width="560" height="80" rx="14" fill="#ffffff" stroke="#b8c9de" stroke-width="2"/><text x="350.0" y="1053.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">Normalizar y filtrar líneas;</text><text x="350.0" y="1079.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">finalizar JSON de evidencia</text><rect x="70" y="1145" width="560" height="80" rx="14" fill="#e3f4ef" stroke="#81bbac" stroke-width="2"/><text x="350.0" y="1178.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">Genyus: texto + serie + lado</text><text x="350.0" y="1204.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">Solo candidatos elegibles</text><rect x="70" y="1270" width="560" height="65" rx="14" fill="#ffffff" stroke="#b8c9de" stroke-width="2"/><text x="350.0" y="1308.5" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">Continuar captura</text><polyline points="350,140 350,175" fill="none" stroke="#526781" stroke-width="2.5" marker-end="url(#arrow)"/><polyline points="350,240 350,275" fill="none" stroke="#526781" stroke-width="2.5" marker-end="url(#arrow)"/><polyline points="350,340 350,375" fill="none" stroke="#526781" stroke-width="2.5" marker-end="url(#arrow)"/><polyline points="350,485 350,525" fill="none" stroke="#526781" stroke-width="2.5" marker-end="url(#arrow)"/><polyline points="350,605 350,650" fill="none" stroke="#526781" stroke-width="2.5" marker-end="url(#arrow)"/><polyline points="350,750 350,790" fill="none" stroke="#526781" stroke-width="2.5" marker-end="url(#arrow)"/><polyline points="350,870 350,915" fill="none" stroke="#526781" stroke-width="2.5" marker-end="url(#arrow)"/><polyline points="350,980 350,1020" fill="none" stroke="#526781" stroke-width="2.5" marker-end="url(#arrow)"/><polyline points="350,1100 350,1145" fill="none" stroke="#526781" stroke-width="2.5" marker-end="url(#arrow)"/><polyline points="350,1225 350,1270" fill="none" stroke="#526781" stroke-width="2.5" marker-end="url(#arrow)"/><text x="390" y="509" text-anchor="middle" font-family="Arial,sans-serif" font-size="16" font-weight="400" fill="#152d47">Sí</text><text x="390" y="774" text-anchor="middle" font-family="Arial,sans-serif" font-size="16" font-weight="400" fill="#152d47">Sí</text><polyline points="630,430 680,430 680,207 630,207" fill="none" stroke="#526781" stroke-width="2.5" marker-end="url(#arrow)"/><text x="655" y="361" text-anchor="middle" font-family="Arial,sans-serif" font-size="16" font-weight="400" fill="#405a75">No</text><polyline points="630,700 680,700 680,430" fill="none" stroke="#526781" stroke-width="2.5" marker-end="url(#arrow)"/><text x="670" y="636" text-anchor="middle" font-family="Arial,sans-serif" font-size="16" font-weight="400" fill="#405a75">No / ocupado</text><polyline points="70,1302 25,1302 25,207 70,207" fill="none" stroke="#526781" stroke-width="2.5" marker-end="url(#arrow)"/><rect x="735" y="80" width="325" height="95" rx="14" fill="#ffffff" stroke="#b8c9de" stroke-width="2"/><text x="897.5" y="120.5" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">Recoger métricas</text><text x="897.5" y="146.5" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">Ciclo de unos 30 segundos</text><rect x="735" y="240" width="325" height="70" rx="14" fill="#e3f4ef" stroke="#81bbac" stroke-width="2"/><text x="897.5" y="281.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">Heartbeat a Genyus</text><rect x="735" y="365" width="325" height="95" rx="14" fill="#e3f4ef" stroke="#81bbac" stroke-width="2"/><text x="897.5" y="405.5" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">Monitor HTTPS opcional</text><text x="897.5" y="431.5" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">Token de escritura requerido</text><polyline points="897,175 897,240" fill="none" stroke="#526781" stroke-width="2.5" marker-end="url(#arrow)"/><polyline points="735,127 705,127 705,412 735,412" fill="none" stroke="#526781" stroke-width="2.5" marker-end="url(#arrow)"/><rect x="735" y="505" width="325" height="100" rx="14" fill="#edf1f7" stroke="#b8c9de" stroke-width="2"/><text x="897.5" y="535.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">Destinos independientes</text><text x="897.5" y="561.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">No contiene fotografías</text><text x="897.5" y="587.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">ni texto de matrículas</text><rect x="735" y="690" width="325" height="120" rx="14" fill="#edf1f7" stroke="#b8c9de" stroke-width="2"/><text x="897.5" y="730.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">OCR en segundo plano:</text><text x="897.5" y="756.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">la captura y detección continúan.</text><text x="897.5" y="782.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">Máximo un trabajo OCR activo.</text><rect x="735" y="1020" width="325" height="100" rx="14" fill="#fce8e5" stroke="#d5948c" stroke-width="2"/><text x="897.5" y="1050.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">Error OCR o sin texto aceptado:</text><text x="897.5" y="1076.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">log y copia completa</text><text x="897.5" y="1102.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">adicional en ErrorOCR</text><polyline points="630,947 680,947 680,1055 735,1055" fill="none" stroke="#526781" stroke-width="2.5" marker-end="url(#arrow)"/><text x="680" y="1001" text-anchor="middle" font-family="Arial,sans-serif" font-size="16" font-weight="400" fill="#405a75">Error</text><polyline points="630,1060 735,1060" fill="none" stroke="#526781" stroke-width="2.5" marker-end="url(#arrow)"/><polyline points="1060,1070 1090,1070 1090,1302 630,1302" fill="none" stroke="#526781" stroke-width="2.5" marker-end="url(#arrow)"/><rect x="735" y="1170" width="325" height="85" rx="14" fill="#edf1f7" stroke="#b8c9de" stroke-width="2"/><text x="897.5" y="1205.5" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">Si falla Genyus: registrar error.</text><text x="897.5" y="1231.5" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">No hay cola de reenvío.</text><rect x="70" y="1380" width="990" height="65" rx="14" fill="#edf1f7" stroke="#b8c9de" stroke-width="2"/><text x="565.0" y="1418.5" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="400" fill="#152d47">Fotos archivadas conservadas · Limpieza automática desactivada</text></svg></div>
+
+<p>El JSON de evidencia se finaliza antes de llamar a Genyus. La presencia de un candidato en ese JSON no demuestra que Genyus lo haya recibido.</p>
+<p>El diagrama describe el recorrido lógico de un evento. El trabajador OCR se ejecuta en segundo plano: mientras espera la respuesta de Azure, el lector puede seguir capturando y detectando. No se acumulan nuevas solicitudes si ese trabajador está ocupado.</p>
+<h2>3. Cómo se decide una consulta al OCR</h2>
+<ul>
+<li>El detector selecciona regiones con puntuación ≥ 0.45. Esa puntuación no es la precisión medida del sistema ni la confianza de Azure.</li>
+<li>De las regiones seleccionadas se utiliza únicamente la última de la lista; no necesariamente es la mejor ni la de mayor confianza. Es una decisión para limitar solicitudes.</li>
+<li>El recorte tiene un margen de aproximadamente cinco píxeles, se limita a los bordes de la imagen y recibe un ajuste de contraste CLAHE por canal.</li>
+<li>Un control por posición limita la repetición: movimiento de al menos 60 píxeles reinicia el contador; sin movimiento permite dos aceptaciones adicionales. Cinco segundos sin observación reinician el estado. No es seguimiento individual de vehículos ni deduplicación por matrícula.</li>
+<li>Hay un solo trabajo OCR activo. Si está ocupado, otro candidato no se acumula en una cola duradera. La captura y la detección pueden continuar.</li>
+<li>Una consulta puede devolver varias líneas. El código puede generar y enviar varios textos elegibles de esa misma respuesta; una sola solicitud OCR no garantiza un único envío a Genyus.</li>
+</ul>
+<h2>4. Qué se guarda y qué se envía</h2>
+<table>
+<thead>
+<tr>
+<th>Destino</th>
+<th>Contenido</th>
+<th>Observación</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SavedPlates/</code></td>
+<td>Fotografía completa del fotograma admitido al trabajador OCR</td>
+<td>No se guardan aquí todos los fotogramas capturados</td>
+</tr>
+<tr>
+<td><code>ErrorOCR/</code></td>
+<td>Copia adicional de la foto completa si no hubo texto aceptado o falló el OCR</td>
+<td>La foto puede permanecer en ambas carpetas; un fallo exclusivo de Genyus no activa por sí solo esta carpeta</td>
+</tr>
+<tr>
+<td><code>OCREvidence/</code></td>
+<td>Recorte JPEG exacto enviado y JSON asociado</td>
+<td>Se usan los mismos bytes, sin recodificar para el envío; un fallo de escritura se registra y no bloquea el OCR</td>
+</tr>
+<tr>
+<td><code>TempImages/</code>, <code>PlateRegionImage/</code></td>
+<td>Imágenes temporales y regiones candidatas</td>
+<td>Se limpian archivos antiguos, protegiendo los que están en uso</td>
+</tr>
+<tr>
+<td><code>Logs/runtime.log</code></td>
+<td>Eventos, errores y entregas registradas</td>
+<td>Rotación de cinco respaldos de hasta unos 5 MiB, además del archivo activo</td>
+</tr>
+<tr>
+<td>Azure OCR</td>
+<td>Bytes del recorte</td>
+<td>Requiere endpoint y clave de Azure</td>
+</tr>
+<tr>
+<td>Genyus: detecciones</td>
+<td><code>plate</code>, <code>serie</code>, <code>side: "1"</code></td>
+<td>Ruta lógica <code>/MexGasStation</code> y servicio <code>/postPlateDetected</code>; no incluye foto ni hora de captura</td>
+</tr>
+</tbody>
+</table>
+<p>El JSON de evidencia incluye hora UTC de preparación del envío (<code>submitted_at_utc</code>), nombre de la foto completa, nombre y tamaño del recorte, SHA256, estado OCR, líneas originales, candidatos normalizados y candidatos elegibles para Genyus. No es una confirmación de entrega ni la hora exacta de exposición de la cámara. No guarda toda la respuesta detallada ni las confianzas de Azure en el flujo habitual.</p>
+<p>La normalización elimina o ajusta algunos separadores y caracteres; el filtro exige números y ciertas condiciones de mayúsculas, estructura y longitud. Genyus solo se intenta para candidatos de 5 a 7 caracteres. Estos filtros no prueban que el objeto sea una matrícula: se observaron números de autobús aceptados como falsos positivos. El OCR también puede confundir caracteres de imágenes borrosas.</p>
+<h2>5. Heartbeat y monitor</h2>
+<p><code>gdf-heartbeat.service</code> recoge temperatura, CPU, RAM, actividad de red y alerta de bajo voltaje. El heartbeat de Genyus utiliza el servicio lógico <code>/postLiperStatus</code>.</p>
+<p>El segundo destino añade hora UTC, etiqueta del equipo y frescura del último fotograma procesado, tomada de <code>.health.json</code>. Los destinos se ejecutan de manera independiente: un fallo de uno no impide intentar el otro.</p>
+<p>El monitor es de consulta pública; su escritura requiere token. No muestra placas, fotografías, claves ni el número de serie sin transformar. Se actualiza cada 10 segundos y considera desconectado un equipo que lleva más de 90 segundos sin señal. La salud del lector se marca reciente con una antigüedad de fotograma de hasta 30 segundos. Esto confirma actividad de captura/inferencia, no que una placa haya llegado a Genyus.</p>
+<p>El nombre público procede de <code>GDF_HEALTH_LABEL</code>, configurado manualmente. El identificador del dispositivo se toma normalmente del número de serie del hardware. El código principal no manda una marca de tiempo de captura junto a la placa; no se ha verificado cómo Genyus asigna su propia hora.</p>
+<h2>6. Qué pasa si falla algo</h2>
+<table>
+<thead>
+<tr>
+<th>Situación</th>
+<th>Comportamiento actual</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Se cae Internet o falla Azure</td>
+<td>Se conserva la foto del evento admitido; normalmente queda también en ErrorOCR. El recorte se conserva si la escritura de evidencia tuvo éxito. No se reprocesa automáticamente después</td>
+</tr>
+<tr>
+<td>Azure leyó, pero falla Genyus</td>
+<td>Se registra el fallo y quedan la evidencia y los candidatos locales. No existe una bandeja persistente de envíos pendientes</td>
+</tr>
+<tr>
+<td>Genyus responde 429</td>
+<td>Hay reintentos acotados con espera; errores ambiguos de POST no se repiten automáticamente para evitar duplicados</td>
+</tr>
+<tr>
+<td>Token rechazado 401/403 al enviar</td>
+<td>El código puede solicitar un token nuevo y hacer un segundo intento</td>
+</tr>
+<tr>
+<td>Falla un destino del heartbeat</td>
+<td>Se registra; el otro destino sigue siendo independiente y el siguiente ciclo volverá a intentarse</td>
+</tr>
+<tr>
+<td>Se cae el lector</td>
+<td>systemd intenta reiniciarlo, con límites de frecuencia</td>
+</tr>
+<tr>
+<td>Se reinicia la Raspberry</td>
+<td>Los servicios habilitados vuelven a arrancar; no se recuperan trabajos OCR que solo estaban en memoria</td>
+</tr>
+<tr>
+<td>Falta espacio</td>
+<td>Puede fallar el guardado o el procesamiento. La retención automática de archivos archivados está desactivada y no hay una cuota automática activa</td>
+</tr>
+</tbody>
+</table>
+<p>La limpieza de temporales sigue funcionando. Es distinta de eliminar fotografías archivadas: <code>gdf-cleanup.timer</code> permanece deshabilitado por decisión del operador. No activar ese temporizador sin revisar su efecto y la conservación deseada.</p>
+<h2>7. Módulos principales</h2>
+<table>
+<thead>
+<tr>
+<th>Archivo</th>
+<th>Responsabilidad</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>MainPlateGSF.py</code></td>
+<td>Cámara, modelo, detecciones, selección del último recorte y salud del lector</td>
+</tr>
+<tr>
+<td><code>runtime.py</code></td>
+<td>Control de repetición, trabajador OCR único, protección y limpieza de temporales</td>
+</tr>
+<tr>
+<td><code>LiPER_NNP.py</code></td>
+<td>Azure OCR, normalización, autenticación y envío de textos a Genyus</td>
+</tr>
+<tr>
+<td><code>ocr_evidence.py</code></td>
+<td>Preservar bytes exactos y JSON de evidencia</td>
+</tr>
+<tr>
+<td><code>MainHBGSF.py</code>, <code>Send_HB.py</code></td>
+<td>Ciclo de heartbeat, métricas y dos destinos</td>
+</tr>
+<tr>
+<td><code>StartSettings.py</code></td>
+<td>Configuración XML, variables de entorno y serie del equipo</td>
+</tr>
+<tr>
+<td><code>HandlingEvents.py</code></td>
+<td>Logs rotativos y ocultamiento de secretos conocidos</td>
+</tr>
+<tr>
+<td><code>deploy/pi_installer.py</code></td>
+<td>Instalación, configuración, validaciones y diagnóstico</td>
+</tr>
+</tbody>
+</table>
+<h2>8. Instalación activa y límites de la validación</h2>
+<p>En Caucel4 los servicios activos utilizan <code>/opt/gdf-test-reuse-20261018</code> y el entorno existente <code>/usr/bin/python3</code> del usuario <code>pi</code>. El nombre de la carpeta conserva el origen de la prueba, pero esa copia ya es la activa. La versión anterior permanece en <code>/home/pi/Desktop/GDF</code>.</p>
+<p>Las carpetas <code>SavedPlates</code>, <code>ErrorOCR</code> y <code>OCREvidence</code> de la copia activa son enlaces a las carpetas anteriores para conservar el historial y evitar duplicar decenas de GB. Los temporales y logs de la nueva copia son propios.</p>
+<p>Se comprobaron fotogramas recientes, ejecución del modelo, una consulta real a Azure y recepción de ambos heartbeats. La prueba OCR histórica confundió la Y inicial de <code>YU-1656-F</code> con V; la consulta funcionó, pero eso no valida la precisión del reconocimiento. No se enviaron placas históricas a Genyus durante esa prueba.</p>
+<p>Pendientes: cola persistente para desconexiones, mejora de precisión, elección de mejor fotograma y validación completa de instalación con sistema limpio. GitHub Actions todavía no despliega automáticamente a la Raspberry.</p><footer>Documento sin credenciales. Diagramas SVG incluidos: puede consultarse sin conexión a Internet. Las rutas y el estado operativo describen la referencia documentada, no una comprobación en tiempo real.</footer></main></body></html>
