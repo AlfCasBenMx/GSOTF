@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Instalar LIPER
+Comment=Instalar y comprobar LIPER en esta Raspberry Pi
+Icon=system-software-install
+Terminal=true
+StartupNotify=false
+Categories=System;
+Exec=python3 -c "import pathlib,runpy,sys,urllib.parse; p=sys.argv[1]; p=urllib.parse.unquote(urllib.parse.urlsplit(p).path) if p.startswith('file:') else p; runpy.run_path(str(pathlib.Path(p).resolve().parent/'deploy'/'desktop_entry.py'),run_name='__main__')" %k

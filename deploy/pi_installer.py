@@ -19,9 +19,10 @@ import time
 import xml.etree.ElementTree as ET
 
 SOURCE = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(SOURCE))
 FILES = ('MainPlateGSF.py', 'MainHBGSF.py', 'LiPER_NNP.py', 'Send_HB.py',
          'StartSettings.py', 'HandlingEvents.py', 'runtime.py',
-         'SendNotifications.py', 'ocr_evidence.py')
+         'SendNotifications.py', 'ocr_evidence.py', 'device_identity.py')
 UNITS = ('gdf-reader.service', 'gdf-heartbeat.service')
 STEPS = {
     'APT_INDEX': 'Actualizar lista de paquetes del sistema',
@@ -159,7 +160,8 @@ def verify_manifest(source):
                 return False
             if hashlib.sha256(p.read_bytes()).hexdigest() != expected:
                 return False
-        required = set(FILES) | {'Config.example.xml', 'deploy/runtime.example.env',
+        required = set(FILES) | {'Config.example.xml', 'Instalar_LIPER.desktop', 'deploy/desktop_entry.py',
+                                  'deploy/install_desktop.sh', 'deploy/runtime.example.env',
                                   'deploy/pi_probe.py', 'deploy/pi_installer.py', 'deploy/requirements-pi4.txt',
                                   'label_map.pbtxt', 'saved_model/saved_model.pb',
                                   'saved_model/variables/variables.index'}
@@ -323,7 +325,7 @@ def install(args, report):
         configure(args, report)
 
 
-def credential_window():
+def credential_window(initial_label='', health_url=''):
     """Return None only when a desktop cannot be opened; cancellation is explicit."""
     if not os.environ.get('DISPLAY') and sys.platform != 'win32':
         return None
@@ -352,11 +354,14 @@ def credential_window():
     entries = {}
     for row, (key, label, secret) in enumerate((('ocrendpoint', 'Endpoint HTTPS de Azure OCR', False),
                                                ('ocrKey', 'Clave de Azure OCR', True),
-                                               ('genyusKey', 'Clave de Genyus', True)), start=2):
+                                               ('genyusKey', 'Clave de Genyus', True),
+                                               ('device_label', 'Nombre del equipo (monitor)', False)), start=2):
         ttk.Label(panel, text=label).grid(row=row, column=0, sticky='w', padx=(0, 12), pady=8)
         entry = ttk.Entry(panel, width=48, show='*' if secret else '')
         entry.grid(row=row, column=1, pady=8)
         entries[key] = entry
+        if key == 'device_label' and initial_label:
+            entry.insert(0, initial_label)
     result = []
     def save():
         values = {key: field.get().strip() for key, field in entries.items()}
@@ -364,12 +369,32 @@ def credential_window():
             messagebox.showerror('Revisa el endpoint', 'Escribe una URL HTTPS sin rutas, consultas ni credenciales.', parent=window)
             return
         if not all(values.values()):
-            messagebox.showerror('Faltan datos', 'Completa los tres campos.', parent=window)
+            messagebox.showerror('Faltan datos', 'Completa los cuatro campos.', parent=window)
             return
+        import device_identity
+        try:
+            values['device_label'] = device_identity.clean_label(values['device_label'])
+            window.configure(cursor='watch')
+            window.update_idletasks()
+            device_identity.check_label(values['device_label'], health_url)
+            values['_name_validated'] = True
+        except device_identity.NameTaken:
+            messagebox.showerror('Nombre ocupado', 'Otra Raspberry ya usa ese nombre. Elige otro.', parent=window)
+            return
+        except device_identity.NameCheckUnavailable:
+            if not messagebox.askyesno('Nombre sin validar', 'No se pudo consultar el monitor. La unicidad NO esta confirmada. Guardar localmente sin validarla?', parent=window):
+                return
+            values['_name_validated'] = False
+        except ValueError as error:
+            messagebox.showerror('Nombre no valido', str(error), parent=window)
+            return
+        finally:
+            window.configure(cursor='')
         result.append(values)
         window.destroy()
-    ttk.Button(panel, text='Cancelar', command=window.destroy).grid(row=5, column=0, pady=(18, 0), sticky='w')
-    ttk.Button(panel, text='Guardar', command=save).grid(row=5, column=1, pady=(18, 0), sticky='e')
+    ttk.Label(panel, text='Nombre: 3-40 letras, numeros, espacios, guion o guion bajo.').grid(row=6, column=0, columnspan=2, sticky='w')
+    ttk.Button(panel, text='Cancelar', command=window.destroy).grid(row=7, column=0, pady=(18, 0), sticky='w')
+    ttk.Button(panel, text='Guardar', command=save).grid(row=7, column=1, pady=(18, 0), sticky='e')
     window.bind('<Return>', lambda event: save())
     window.bind('<Escape>', lambda event: window.destroy())
     entries['ocrendpoint'].focus_set()
@@ -379,9 +404,9 @@ def credential_window():
     return result[0]
 
 
-def credential_values(terminal=False):
+def credential_values(terminal=False, initial_label='', health_url=''):
     if not terminal:
-        values = credential_window()
+        values = credential_window(initial_label=initial_label, health_url=health_url)
         if values is not None:
             return values
         print('No desktop available; enter credentials in the terminal.', flush=True)
@@ -400,6 +425,18 @@ def credential_values(terminal=False):
             raise Failure('SECURE_INPUT_UNAVAILABLE: use an interactive terminal with echo control')
     if not all(values.values()):
         raise Failure('EMPTY_CREDENTIAL')
+    import device_identity
+    values['device_label'] = device_identity.clean_label(input('Nombre del equipo para el monitor: ').strip() or initial_label)
+    try:
+        device_identity.check_label(values['device_label'], health_url)
+        values['_name_validated'] = True
+    except device_identity.NameTaken:
+        raise Failure('DEVICE_NAME_TAKEN: elige otro nombre')
+    except device_identity.NameCheckUnavailable:
+        print('No se pudo validar la unicidad en el monitor.')
+        if input('Guardar localmente sin validar? [s/N]: ').strip().lower() != 's':
+            raise Failure('DEVICE_NAME_NOT_VALIDATED')
+        values['_name_validated'] = False
     return values
 
 
@@ -408,11 +445,16 @@ def configure(args, report):
     path = Path(args.root) / 'Config.xml'
     tree = ET.parse(str(path))
     report.phase('CREDENTIALS', 'waiting_for_input')
+    sys.path.insert(0, str(SOURCE))
+    import device_identity
+    runtime = device_identity.runtime_values(Path(args.root) / 'runtime.env')
     try:
-        values = credential_values(terminal=args.terminal)
+        values = credential_values(terminal=args.terminal, initial_label=runtime.get('GDF_HEALTH_LABEL', ''), health_url=runtime.get('GDF_HEALTH_URL', ''))
     except (Exception, KeyboardInterrupt):
         report.phase('CREDENTIALS', 'failed')
         raise
+    label = values.pop('device_label')
+    validated = values.pop('_name_validated')
     for tag, value in values.items():
         node = tree.getroot().find(tag)
         if node is None:
@@ -425,7 +467,9 @@ def configure(args, report):
     owner = path.stat()
     os.chown(str(temporary), owner.st_uid, owner.st_gid)
     os.replace(str(temporary), str(path))
+    device_identity.save_label(Path(args.root) / 'runtime.env', label)
     report.add('CONFIG_SAVED', True)
+    report.add('DEVICE_NAME_CHECKED', validated, 'Nombre guardado localmente; unicidad central no confirmada.' if not validated else '', detail='Availability check is not a reservation; server rejects duplicate registered names.')
     report.phase('CREDENTIALS', 'completed')
 
 

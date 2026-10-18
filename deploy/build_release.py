@@ -19,10 +19,10 @@ def build(source, model_root, output):
     with tempfile.TemporaryDirectory() as temp:
         stage = Path(temp) / 'gdf-installer'
         stage.mkdir()
-        for name in FILES + ('Config.example.xml',):
+        for name in FILES + ('Config.example.xml', 'Instalar_LIPER.desktop'):
             shutil.copy2(str(source / name), str(stage / name))
         (stage / 'deploy').mkdir()
-        for name in ('pi_installer.py', 'pi_probe.py', 'requirements-pi4.txt', 'runtime.example.env', 'INSTALL_PI_ES.md'):
+        for name in ('pi_installer.py', 'pi_probe.py', 'requirements-pi4.txt', 'runtime.example.env', 'INSTALL_PI_ES.md', 'desktop_entry.py', 'install_desktop.sh'):
             shutil.copy2(str(source / 'deploy' / name), str(stage / 'deploy' / name))
         shutil.copytree(str(model_root / 'saved_model'), str(stage / 'saved_model'))
         shutil.copy2(str(model_root / 'label_map.pbtxt'), str(stage / 'label_map.pbtxt'))
@@ -40,7 +40,7 @@ def build(source, model_root, output):
                     info = archive.gettarinfo(str(p), arcname='gdf-installer/' + p.relative_to(stage).as_posix())
                     info.uid = info.gid = 0
                     info.uname = info.gname = ''
-                    info.mode = 0o644
+                    info.mode = 0o755 if p.suffix in ('.desktop', '.sh') else 0o644
                     with p.open('rb') as stream:
                         archive.addfile(info, stream)
     digest = hashlib.sha256(output.read_bytes()).hexdigest()

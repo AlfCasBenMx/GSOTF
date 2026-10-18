@@ -64,7 +64,7 @@ class InstallerTests(unittest.TestCase):
             prompt.assert_not_called()
 
     def test_headless_asks_in_terminal_with_hidden_keys(self):
-        with patch.object(installer, 'credential_window', return_value=None), patch.object(sys.stdin, 'isatty', return_value=True), patch('builtins.input', return_value='https://example.invalid'), patch.object(installer.getpass, 'getpass', side_effect=['secret1', 'secret2']) as hidden:
+        with patch.object(installer, 'credential_window', return_value=None), patch.object(sys.stdin, 'isatty', return_value=True), patch('builtins.input', side_effect=['https://example.invalid','Caucel4']), patch('device_identity.check_label', return_value={'checked':True}), patch.object(installer.getpass, 'getpass', side_effect=['secret1', 'secret2']) as hidden:
             values = installer.credential_values()
         self.assertEqual(values['ocrKey'], 'secret1')
         self.assertEqual(hidden.call_count, 2)
@@ -94,7 +94,7 @@ class InstallerTests(unittest.TestCase):
         ttk = Mock()
         def entry(*a, **kw):
             field = Mock()
-            field.get.return_value = ['https://example.invalid', 'secret1', 'secret2'][len(fields)]
+            field.get.return_value = ['https://example.invalid', 'secret1', 'secret2', 'Caucel4'][len(fields)]
             fields.append((field, kw))
             return field
         def button(*a, **kw):
@@ -107,10 +107,10 @@ class InstallerTests(unittest.TestCase):
         tk.ttk = ttk
         tk.messagebox = Mock()
         window.mainloop.side_effect = lambda: buttons[-1]['command']()
-        with patch.dict(sys.modules, {'tkinter': tk}), patch.dict(installer.os.environ, {'DISPLAY': ':test', 'XAUTHORITY': '/fake'}):
+        with patch.dict(sys.modules, {'tkinter': tk}), patch.dict(installer.os.environ, {'DISPLAY': ':test', 'XAUTHORITY': '/fake'}), patch('device_identity.check_label', return_value={'checked':True}):
             values = installer.credential_window()
         self.assertEqual(values['genyusKey'], 'secret2')
-        self.assertEqual([kw['show'] for field, kw in fields], ['', '*', '*'])
+        self.assertEqual([kw['show'] for field, kw in fields], ['', '*', '*', ''])
         tk.messagebox.showerror.assert_not_called()
 
     def test_partial_start_failure_stops_both_services(self):
@@ -170,9 +170,9 @@ class InstallerTests(unittest.TestCase):
             source, model = root / 'src', root / 'model'
             source.mkdir()
             (source / 'deploy').mkdir()
-            for name in installer.FILES + ('Config.example.xml',):
+            for name in installer.FILES + ('Config.example.xml', 'Instalar_LIPER.desktop'):
                 (source / name).write_text('example')
-            for name in ('pi_installer.py', 'pi_probe.py', 'requirements-pi4.txt', 'runtime.example.env', 'INSTALL_PI_ES.md'):
+            for name in ('pi_installer.py', 'pi_probe.py', 'requirements-pi4.txt', 'runtime.example.env', 'INSTALL_PI_ES.md', 'desktop_entry.py', 'install_desktop.sh'):
                 (source / 'deploy' / name).write_text('example')
             (source / 'Config.xml').write_text('SECRET')
             (source / 'credentials-local').mkdir()

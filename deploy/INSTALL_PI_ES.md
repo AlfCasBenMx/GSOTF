@@ -133,3 +133,9 @@ El constructor usa una lista explícita de módulos y archivos. Excluye credenci
 fotografías, logs y archivos de ejecución, genera hashes por archivo y un SHA256
 del archivo comprimido. Verificar el SHA256 por un canal de confianza; un manifiesto
 de hashes comprueba integridad, no sustituye una firma del autor.
+
+## Instalacion con doble clic mediante AnyDesk
+
+Extrae el paquete y abre `Instalar_LIPER.desktop` en la Raspberry. Si el escritorio lo solicita, permite su ejecucion. El lanzador muestra el avance en una terminal y pide autorizacion de administrador. La ventana solicita el endpoint y la clave de Azure, la clave de Genyus y el nombre del equipo para el monitor; este nombre no cambia el hostname del sistema. Luego comprueba el hardware y arranca los servicios.
+
+El nombre admite de 3 a 40 caracteres. El instalador consulta su disponibilidad en el monitor. Si la consulta no esta disponible, muestra una advertencia y solo permite continuar mediante confirmacion explicita; en ese caso la unicidad no queda verificada. La consulta no reserva un nombre.
