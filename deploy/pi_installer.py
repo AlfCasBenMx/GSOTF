@@ -348,7 +348,18 @@ def install(args, report):
         configure(args, report)
 
 
-def credential_window(initial_label='', health_url=''):
+DEFAULT_HEALTH_URL = 'https://liper-health-monitor.loftygrebe10.chatgpt.site/api/heartbeat'
+
+def validate_monitor(url, token):
+    from urllib.parse import urlsplit
+    parsed = urlsplit(url)
+    if parsed.scheme != 'https' or not parsed.hostname or parsed.username or parsed.password or parsed.fragment or any(c.isspace() for c in url):
+        raise ValueError('Escribe una URL HTTPS valida para el monitor.')
+    if not token or any(c.isspace() for c in token):
+        raise ValueError('Introduce el token del monitor sin espacios.')
+
+
+def credential_window(initial_label='', health_url='', health_token=''):
     """Return None only when a desktop cannot be opened; cancellation is explicit."""
     if not os.environ.get('DISPLAY') and sys.platform != 'win32':
         return None
@@ -378,13 +389,19 @@ def credential_window(initial_label='', health_url=''):
     for row, (key, label, secret) in enumerate((('ocrendpoint', 'Endpoint HTTPS de Azure OCR', False),
                                                ('ocrKey', 'Clave de Azure OCR', True),
                                                ('genyusKey', 'Clave de Genyus', True),
-                                               ('device_label', 'Nombre del equipo (monitor)', False)), start=2):
+                                               ('device_label', 'Nombre del equipo (monitor)', False),
+                                               ('health_url', 'URL HTTPS del monitor', False),
+                                               ('health_token', 'Token del monitor', True)), start=2):
         ttk.Label(panel, text=label).grid(row=row, column=0, sticky='w', padx=(0, 12), pady=8)
         entry = ttk.Entry(panel, width=48, show='*' if secret else '')
         entry.grid(row=row, column=1, pady=8)
         entries[key] = entry
         if key == 'device_label' and initial_label:
             entry.insert(0, initial_label)
+        if key == 'health_url':
+            entry.insert(0, health_url or DEFAULT_HEALTH_URL)
+        if key == 'health_token' and health_token:
+            entry.insert(0, health_token)
     result = []
     def save():
         values = {key: field.get().strip() for key, field in entries.items()}
@@ -392,14 +409,15 @@ def credential_window(initial_label='', health_url=''):
             messagebox.showerror('Revisa el endpoint', 'Escribe una URL HTTPS sin rutas, consultas ni credenciales.', parent=window)
             return
         if not all(values.values()):
-            messagebox.showerror('Faltan datos', 'Completa los cuatro campos.', parent=window)
+            messagebox.showerror('Faltan datos', 'Completa los seis campos.', parent=window)
             return
         import device_identity
         try:
+            validate_monitor(values['health_url'], values['health_token'])
             values['device_label'] = device_identity.clean_label(values['device_label'])
             window.configure(cursor='watch')
             window.update_idletasks()
-            device_identity.check_label(values['device_label'], health_url)
+            device_identity.check_label(values['device_label'], values['health_url'])
             values['_name_validated'] = True
         except device_identity.NameTaken:
             messagebox.showerror('Nombre ocupado', 'Otra Raspberry ya usa ese nombre. Elige otro.', parent=window)
@@ -415,9 +433,9 @@ def credential_window(initial_label='', health_url=''):
             window.configure(cursor='')
         result.append(values)
         window.destroy()
-    ttk.Label(panel, text='Nombre: 3-40 letras, numeros, espacios, guion o guion bajo.').grid(row=6, column=0, columnspan=2, sticky='w')
-    ttk.Button(panel, text='Cancelar', command=window.destroy).grid(row=7, column=0, pady=(18, 0), sticky='w')
-    ttk.Button(panel, text='Guardar', command=save).grid(row=7, column=1, pady=(18, 0), sticky='e')
+    ttk.Label(panel, text='Nombre: 3-40 letras, numeros, espacios, guion o guion bajo.').grid(row=8, column=0, columnspan=2, sticky='w')
+    ttk.Button(panel, text='Cancelar', command=window.destroy).grid(row=9, column=0, pady=(18, 0), sticky='w')
+    ttk.Button(panel, text='Guardar', command=save).grid(row=9, column=1, pady=(18, 0), sticky='e')
     window.bind('<Return>', lambda event: save())
     window.bind('<Escape>', lambda event: window.destroy())
     entries['ocrendpoint'].focus_set()
@@ -427,9 +445,9 @@ def credential_window(initial_label='', health_url=''):
     return result[0]
 
 
-def credential_values(terminal=False, initial_label='', health_url=''):
+def credential_values(terminal=False, initial_label='', health_url='', health_token=''):
     if not terminal:
-        values = credential_window(initial_label=initial_label, health_url=health_url)
+        values = credential_window(initial_label=initial_label, health_url=health_url, health_token=health_token)
         if values is not None:
             return values
         print('No desktop available; enter credentials in the terminal.', flush=True)
@@ -443,15 +461,18 @@ def credential_values(terminal=False, initial_label='', health_url=''):
         warnings.simplefilter('error', getpass.GetPassWarning)
         try:
             values = {'ocrendpoint': endpoint, 'ocrKey': getpass.getpass('Azure OCR key: ').strip(),
-                      'genyusKey': getpass.getpass('Genyus key: ').strip()}
+                      'genyusKey': getpass.getpass('Genyus key: ').strip(),
+                      'health_token': getpass.getpass('Monitor token (Enter keeps existing): ').strip() or health_token}
         except getpass.GetPassWarning:
             raise Failure('SECURE_INPUT_UNAVAILABLE: use an interactive terminal with echo control')
     if not all(values.values()):
         raise Failure('EMPTY_CREDENTIAL')
+    values['health_url'] = input('Monitor HTTPS URL (Enter uses default): ').strip() or health_url or DEFAULT_HEALTH_URL
+    validate_monitor(values['health_url'], values['health_token'])
     import device_identity
     values['device_label'] = device_identity.clean_label(input('Nombre del equipo para el monitor: ').strip() or initial_label)
     try:
-        device_identity.check_label(values['device_label'], health_url)
+        device_identity.check_label(values['device_label'], values['health_url'])
         values['_name_validated'] = True
     except device_identity.NameTaken:
         raise Failure('DEVICE_NAME_TAKEN: elige otro nombre')
@@ -472,12 +493,15 @@ def configure(args, report):
     import device_identity
     runtime = device_identity.runtime_values(Path(args.root) / 'runtime.env')
     try:
-        values = credential_values(terminal=args.terminal, initial_label=runtime.get('GDF_HEALTH_LABEL', ''), health_url=runtime.get('GDF_HEALTH_URL', ''))
+        values = credential_values(terminal=args.terminal, initial_label=runtime.get('GDF_HEALTH_LABEL', ''), health_url=runtime.get('GDF_HEALTH_URL', ''), health_token=runtime.get('GDF_HEALTH_TOKEN', ''))
     except (Exception, KeyboardInterrupt):
         report.phase('CREDENTIALS', 'failed')
         raise
     label = values.pop('device_label')
     validated = values.pop('_name_validated')
+    monitor_url = values.pop('health_url')
+    monitor_token = values.pop('health_token')
+    validate_monitor(monitor_url, monitor_token)
     for tag, value in values.items():
         node = tree.getroot().find(tag)
         if node is None:
@@ -490,7 +514,8 @@ def configure(args, report):
     owner = path.stat()
     os.chown(str(temporary), owner.st_uid, owner.st_gid)
     os.replace(str(temporary), str(path))
-    device_identity.save_label(Path(args.root) / 'runtime.env', label)
+    device_identity.save_monitor(Path(args.root) / 'runtime.env', {
+        'GDF_HEALTH_LABEL': label, 'GDF_HEALTH_URL': monitor_url, 'GDF_HEALTH_TOKEN': monitor_token})
     report.add('CONFIG_SAVED', True)
     report.add('DEVICE_NAME_CHECKED', validated, 'Nombre guardado localmente; unicidad central no confirmada.' if not validated else '', detail='Availability check is not a reservation; server rejects duplicate registered names.')
     report.phase('CREDENTIALS', 'completed')

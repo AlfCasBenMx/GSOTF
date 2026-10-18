@@ -71,10 +71,16 @@ def runtime_values(path):
 
 
 def save_label(path, label):
+    save_monitor(path, {'GDF_HEALTH_LABEL': clean_label(label)})
+
+
+def save_monitor(path, values):
+    if set(values) - {'GDF_HEALTH_LABEL', 'GDF_HEALTH_URL', 'GDF_HEALTH_TOKEN'}:
+        raise ValueError('Unexpected monitor setting')
     path = Path(path)
     lines = path.read_text(encoding='utf-8').splitlines() if path.exists() else []
-    lines = [line for line in lines if not line.strip().startswith('GDF_HEALTH_LABEL=')]
-    lines.append('GDF_HEALTH_LABEL=' + json.dumps(clean_label(label)))
+    lines = [line for line in lines if line.partition('=')[0].strip() not in values]
+    lines.extend(key + '=' + json.dumps(value) for key, value in values.items())
     temporary = path.with_suffix('.label.tmp')
     with temporary.open('w', encoding='utf-8') as stream:
         os.chmod(str(temporary), 0o600)

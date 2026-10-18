@@ -16,6 +16,28 @@ import build_release
 
 
 class InstallerTests(unittest.TestCase):
+    def test_monitor_fields_are_required_and_validate_https(self):
+        installer.validate_monitor('https://monitor.invalid/api/heartbeat', 'test-token')
+        for url, token in [('http://monitor.invalid', 'token'),
+                           ('https://user:secret@monitor.invalid', 'token'),
+                           ('https://monitor.invalid', ''),
+                           ('https://monitor.invalid', 'bad\ntoken')]:
+            with self.assertRaises(ValueError):
+                installer.validate_monitor(url, token)
+
+    def test_monitor_settings_persist_without_changing_other_credentials(self):
+        import device_identity
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / 'runtime.env'
+            path.write_text('GDF_HEALTH_URL=\nGDF_HEALTH_TOKEN=\nGDF_SMTP_PASSWORD=unchanged\n')
+            values = {'GDF_HEALTH_URL': 'https://monitor.invalid/api/heartbeat',
+                      'GDF_HEALTH_TOKEN': 'test-token', 'GDF_HEALTH_LABEL': 'Caucel6'}
+            device_identity.save_monitor(path, values)
+            saved = device_identity.runtime_values(path)
+            self.assertTrue(all(saved[k] == v for k, v in values.items()))
+            self.assertEqual(saved['GDF_SMTP_PASSWORD'], 'unchanged')
+            self.assertEqual(path.read_text().count('GDF_HEALTH_TOKEN='), 1)
+
     def test_stage_progress_does_not_advance_while_waiting_or_on_failure(self):
         with tempfile.TemporaryDirectory() as temp:
             report = installer.Report(temp, 'install')
@@ -85,10 +107,10 @@ class InstallerTests(unittest.TestCase):
             prompt.assert_not_called()
 
     def test_headless_asks_in_terminal_with_hidden_keys(self):
-        with patch.object(installer, 'credential_window', return_value=None), patch.object(sys.stdin, 'isatty', return_value=True), patch('builtins.input', side_effect=['https://example.invalid','Caucel4']), patch('device_identity.check_label', return_value={'checked':True}), patch.object(installer.getpass, 'getpass', side_effect=['secret1', 'secret2']) as hidden:
+        with patch.object(installer, 'credential_window', return_value=None), patch.object(sys.stdin, 'isatty', return_value=True), patch('builtins.input', side_effect=['https://example.invalid','','Caucel4']), patch('device_identity.check_label', return_value={'checked':True}), patch.object(installer.getpass, 'getpass', side_effect=['secret1', 'secret2', 'monitor-token']) as hidden:
             values = installer.credential_values()
         self.assertEqual(values['ocrKey'], 'secret1')
-        self.assertEqual(hidden.call_count, 2)
+        self.assertEqual(hidden.call_count, 3)
 
     def test_redirected_input_does_not_accept_credentials(self):
         with patch.object(sys.stdin, 'isatty', return_value=False), patch('builtins.input') as prompt:
@@ -115,7 +137,7 @@ class InstallerTests(unittest.TestCase):
         ttk = Mock()
         def entry(*a, **kw):
             field = Mock()
-            field.get.return_value = ['https://example.invalid', 'secret1', 'secret2', 'Caucel4'][len(fields)]
+            field.get.return_value = ['https://example.invalid', 'secret1', 'secret2', 'Caucel4', 'https://monitor.invalid/api/heartbeat', 'monitor-token'][len(fields)]
             fields.append((field, kw))
             return field
         def button(*a, **kw):
@@ -131,7 +153,7 @@ class InstallerTests(unittest.TestCase):
         with patch.dict(sys.modules, {'tkinter': tk}), patch.dict(installer.os.environ, {'DISPLAY': ':test', 'XAUTHORITY': '/fake'}), patch('device_identity.check_label', return_value={'checked':True}):
             values = installer.credential_window()
         self.assertEqual(values['genyusKey'], 'secret2')
-        self.assertEqual([kw['show'] for field, kw in fields], ['', '*', '*', ''])
+        self.assertEqual([kw['show'] for field, kw in fields], ['', '*', '*', '', '', '*'])
         tk.messagebox.showerror.assert_not_called()
 
     def test_partial_start_failure_stops_both_services(self):

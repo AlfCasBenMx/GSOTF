@@ -143,3 +143,7 @@ El nombre admite de 3 a 40 caracteres. El instalador consulta su disponibilidad 
 ## Porcentaje de avance
 
 La terminal y `gdf-reports/installer-status.json` muestran un porcentaje estimado por etapas: preparacion 0-5%, entorno y dependencias 5-75%, credenciales hasta 80%, comprobaciones hasta 90% y arranque correcto de los servicios hasta 100%. El porcentaje no mide bytes descargados ni tiempo restante. Durante una etapa larga se mantiene fijo y el tiempo transcurrido se actualiza cada 30 segundos. Un fallo no completa esa etapa ni muestra 100%.
+
+## Credenciales del monitor de salud
+
+La ventana de configuracion solicita seis datos: endpoint de Azure OCR, clave de Azure, clave de Genyus, nombre del equipo, URL HTTPS del monitor y token del monitor. La URL del monitor viene precargada; introduce el token autorizado, que se muestra oculto. Los seis campos son obligatorios. La URL, el token y el nombre se guardan en runtime.env con permisos privados, conservando las demas opciones. Al reconfigurar se recuperan los valores existentes del monitor. No publiques ni envies capturas del token. Guardar la configuracion no confirma la entrega: el registro aparece cuando el servidor acepta el primer heartbeat.

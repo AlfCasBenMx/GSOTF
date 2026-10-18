@@ -206,3 +206,7 @@ python3 deploy/build_release.py --model-root /ruta/GDF --output GDF_instalador_p
 ```
 
 `/ruta/GDF` debe contener `saved_model/` y `label_map.pbtxt`. El constructor usa una lista explícita de archivos e incluye un manifiesto SHA256; excluye configuración real, fotos y logs. Revisar siempre los archivos antes de publicar. El repositorio no debe incluir `credentials-local/`. El despliegue automático mediante GitHub Actions todavía no está conectado.
+
+## Credenciales del monitor de salud
+
+La ventana de configuracion solicita seis datos: endpoint de Azure OCR, clave de Azure, clave de Genyus, nombre del equipo, URL HTTPS del monitor y token del monitor. La URL del monitor viene precargada; introduce el token autorizado, que se muestra oculto. Los seis campos son obligatorios. La URL, el token y el nombre se guardan en runtime.env con permisos privados, conservando las demas opciones. Al reconfigurar se recuperan los valores existentes del monitor. No publiques ni envies capturas del token. Guardar la configuracion no confirma la entrega: el registro aparece cuando el servidor acepta el primer heartbeat.
