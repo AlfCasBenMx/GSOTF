@@ -29,7 +29,7 @@ Para apagar el panel, definir `GDF_DASHBOARD=0` en `/opt/gdf/runtime.env` y rein
 
 ## Equipos que ya están instalados
 
-Publicar este cambio de código no actualiza por sí solo los equipos. Caucel4 y Caucel6 se actualizaron de forma controlada el 20 de octubre de 2026 (ver registros debajo). No volver a ejecutar el instalador nuevo sobre `/opt/gdf`. Para desplegar hay que respaldar la versión activa, copiar los archivos correspondientes a su ruta real, conservar `Config.xml`/`runtime.env` y datos/modelo, y reiniciar de forma controlada. La integración necesita `MainPlateGSF.py`, `LiPER_NNP.py` y `local_dashboard.py` de la misma versión; el lanzador gráfico necesita `deploy/open_dashboard.py`.
+Publicar este cambio de código no actualiza por sí solo los equipos. Caucel1, Caucel4 y Caucel6 se actualizaron de forma controlada el 20 de octubre de 2026 (ver registros debajo). No volver a ejecutar el instalador nuevo sobre `/opt/gdf`. Para desplegar hay que respaldar la versión activa, copiar los archivos correspondientes a su ruta real, conservar `Config.xml`/`runtime.env` y datos/modelo, y reiniciar de forma controlada. La integración necesita `MainPlateGSF.py`, `LiPER_NNP.py` y `local_dashboard.py` de la misma versión; el lanzador gráfico necesita `deploy/open_dashboard.py`.
 
 Después verificar servicios, primer fotograma, panel local y una lectura real. Hasta entonces no considerar certificado el consumo de CPU, latencia ni funcionamiento de cámara real de esta versión.
 
@@ -64,3 +64,16 @@ Para revertir Caucel6, detener los dos servicios y conservar aparte la aplicaci�
 Los servicios habilitados intentan arrancar automáticamente cuando la Raspberry vuelve a encender. Durante un corte de energía no hay captura. El panel gráfico se abre al iniciar sesión en el escritorio; el lector no necesita navegador para operar.
 
 Sin internet, la captura/detección y el panel local pueden continuar, pero el OCR de Azure, la entrega a Genyus y el monitor remoto requieren conectividad. El heartbeat vuelve a intentar en sus ciclos posteriores; las nuevas lecturas vuelven a intentar los servicios cuando hay conexión. No hay cola persistente para garantizar el reprocesamiento y la entrega de eventos fallidos. Guardar una imagen de error no implica que después se reenvíe automáticamente.
+
+## Registro de migración de Caucel1 — 20 de octubre de 2026
+
+- Acceso SSH mediante Caucel4, usando la clave pública autorizada por el usuario. El lector anterior corría en el backend de Thonny desde `/home/pi/Desktop/GDF`; no existía `/opt/gdf` ni servicios GDF instalados.
+- Respaldo privado `/home/pi/backups/dashboard-update-20261020-171741`: código, modelo, configuración XML, cron y archivos retirados en `legacy-desktop-code`. Las imágenes históricas no se copiaron ni eliminaron.
+- Instalación con panel `24d47c1` en `/opt/gdf`, reutilizando explícitamente `/usr/bin/python3` después de validar su entorno; no hubo apt/pip ni descarga nueva de TensorFlow.
+- Se preservaron el modelo y todo el Config.xml original. Los valores literales SMTP se trasladaron al runtime privado sin imprimirlos; no se probó el envío de correo. Los endpoints efectivos de Genyus coincidían con la versión actual; el identificador siguió tomándose del hardware, como hacía el lector anterior.
+- Se configuró el monitor con token autorizado y etiqueta `Caucel1`. Tras preparar la copia, se detuvo el backend anterior de Thonny y se arrancaron los servicios nuevos. El editor puede seguir abierto, pero no se debe ejecutar la versión antigua desde él.
+- SavedPlates, ErrorOCR y OCREvidence de `/opt/gdf` apuntan a las carpetas de datos de `/home/pi/Desktop/GDF`. El código/modelo anterior se retiró a la carpeta privada de respaldo después de verificar el arranque nuevo.
+- Verificado: un lector activo, dos servicios habilitados y sin reinicios, fotograma de cámara reciente, JPEG/API HTTP 200, icono del escritorio y Chromium abiertos. El monitor aceptó cuatro heartbeats al comprobarlo, sin fallos de destino registrados.
+- El historial de tarjetas empezó vacío; falta una nueva placa real y verificar su tarjeta y aceptación por Genyus. No se reprocesaron placas históricas para probarlo.
+
+Para revertir Caucel1, detener los servicios nuevos, restaurar los archivos de `legacy-desktop-code` a su carpeta original y revisar el mecanismo de arranque anterior. Conservar las carpetas de imágenes y sus enlaces. No ejecutar dos lectores sobre la misma cámara. El archivo de respaldo contiene secretos y queda fuera del repositorio.
