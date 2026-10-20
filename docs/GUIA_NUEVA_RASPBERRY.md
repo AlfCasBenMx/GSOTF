@@ -219,3 +219,7 @@ Cada comando imprime `REPORT=...json`. Conservar ese reporte y el paso que fall√
 Repositorio: https://github.com/AlfCasBenMx/GSOTF
 
 Versi√≥n de estos pasos: https://github.com/AlfCasBenMx/GSOTF/tree/fixes/runtime-reliability
+
+## Panel local de camara y lecturas
+
+El paquete actualizado abre el panel en el navegador de la Raspberry: http://127.0.0.1:8765/. Muestra la captura reducida y las ultimas cinco placas distintas de la sesion. Se puede ver mediante AnyDesk. Ver [PANEL_LOCAL.md](PANEL_LOCAL.md) para recursos, arranque y limites. Es independiente del monitor publico de salud.

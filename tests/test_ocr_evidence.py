@@ -37,8 +37,9 @@ class EvidenceTests(unittest.TestCase):
                 return Mock(headers={"Operation-Location": "https://example.invalid/op/id"})
             client.read_in_stream.side_effect = submit
             client.get_read_result.return_value = Mock(status="succeeded", analyze_result=Mock(read_results=[Mock(lines=[Mock(text="ABC-123")])]))
-            with patch.object(LiPER_NNP.StartSettings, "ocrKey", "fake", create=True), patch.object(LiPER_NNP.StartSettings, "myOCREndpoint", "https://example.invalid", create=True), patch.object(LiPER_NNP, "validate_credentials", return_value=True), patch("azure.cognitiveservices.vision.computervision.ComputerVisionClient", return_value=client), patch("msrest.authentication.CognitiveServicesCredentials"), patch.object(LiPER_NNP, "sendPlate") as send, patch.object(LiPER_NNP.myEvent, "logEvent"):
+            with patch.object(LiPER_NNP.StartSettings, "ocrKey", "fake", create=True), patch.object(LiPER_NNP.StartSettings, "myOCREndpoint", "https://example.invalid", create=True), patch.object(LiPER_NNP, "validate_credentials", return_value=True), patch("azure.cognitiveservices.vision.computervision.ComputerVisionClient", return_value=client), patch("msrest.authentication.CognitiveServicesCredentials"), patch.object(LiPER_NNP, "sendPlate") as send, patch("local_dashboard.record_reading") as panel, patch.object(LiPER_NNP.myEvent, "logEvent"):
                 LiPER_NNP.Predicciones_BN(str(crop), str(full), str(base / "SavedPlates"), str(base / "ErrorOCR"))
+            panel.assert_called_once_with(["ABC123"], data)
             self.assertEqual(received, [data])
             evidence = base / "OCREvidence"
             self.assertEqual(next(evidence.glob("*.jpg")).read_bytes(), data)

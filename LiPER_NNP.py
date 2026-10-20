@@ -295,6 +295,12 @@ def Predicciones_BN(plateFile,fullImage, folderpath, ocrPath):
                     ocr_evidence.finish(*evidence, ocr_status, raw_lines, myplates)
                 except Exception:
                     myEvent.setup_logging().exception('Could not finish OCR evidence')
+            try:
+                import local_dashboard
+                if myplates:
+                    local_dashboard.record_reading(myplates, crop_bytes)
+            except Exception:
+                myEvent.setup_logging().exception('Could not update dashboard readings')
             sendPlate(myplates, fullImage)
             # Keep the original full capture in SavedPlates AND, on failure, ErrorOCR.
             copyPlateImage(fullImage, folderpath if myplates else ocrPath)

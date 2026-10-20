@@ -147,3 +147,7 @@ La terminal y `gdf-reports/installer-status.json` muestran un porcentaje estimad
 ## Credenciales del monitor de salud
 
 La ventana de configuracion solicita seis datos: endpoint de Azure OCR, clave de Azure, clave de Genyus, nombre del equipo, URL HTTPS del monitor y token del monitor. La URL del monitor viene precargada; introduce el token autorizado, que se muestra oculto. Los seis campos son obligatorios. La URL, el token y el nombre se guardan en runtime.env con permisos privados, conservando las demas opciones. Al reconfigurar se recuperan los valores existentes del monitor. No publiques ni envies capturas del token. Guardar la configuracion no confirma la entrega: el registro aparece cuando el servidor acepta el primer heartbeat.
+
+## Panel local
+
+El lector incluye un panel en http://127.0.0.1:8765/ con la camara reducida y cinco lecturas distintas. El instalador grafico lo abre tras arrancar y crea un acceso en el escritorio y en el autoinicio de sesion. No hay llamadas OCR adicionales. El historial del panel es en memoria y se reinicia con el lector. El panel es local; no publica imagenes en el monitor de salud. La frecuencia depende del detector, no es video a 30 FPS.

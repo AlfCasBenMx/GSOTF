@@ -8,6 +8,7 @@ from datetime import datetime
 
 import HandlingEvents as events
 import StartSettings
+import local_dashboard
 from runtime import BASE_DIR, OCRWorker, PlateGate
 
 
@@ -21,6 +22,7 @@ def main():
     worker = OCRWorker()
     lockfile = None
     stop = threading.Event()
+    dashboard = None
     signal.signal(signal.SIGTERM, lambda *_: stop.set())
     signal.signal(signal.SIGINT, lambda *_: stop.set())
     try:
@@ -28,6 +30,14 @@ def main():
         lockfile = open(BASE_DIR / ".runtime.lock", "a")
         fcntl.flock(lockfile.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
         StartSettings.startVar(required=("ocrKey", "myOCREndpoint", "genyusKey", "serialLiper"))
+        if os.environ.get('GDF_DASHBOARD', '1') == '1':
+            try:
+                dashboard = local_dashboard.start()
+                if os.environ.get('DISPLAY'):
+                    import webbrowser
+                    webbrowser.open('http://127.0.0.1:8765/')
+            except Exception:
+                log.exception('Local dashboard unavailable; reader will continue')
         import cv2
         import numpy as np
         import tensorflow as tf
@@ -50,7 +60,8 @@ def main():
         detector = tf.saved_model.load(str(BASE_DIR / "saved_model"))
         clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
         gate = PlateGate()
-        display = os.environ.get("GDF_DISPLAY", "1") == "1"
+        display = dashboard is None and os.environ.get("GDF_DISPLAY", "1") == "1"
+        last_preview = 0
         last_cleanup = time.monotonic()
         log.info("Camera and model ready; last-detection-only OCR enabled")
         last_health = 0
@@ -67,6 +78,15 @@ def main():
             if image is None:
                 raise RuntimeError("Camera image could not be decoded")
             height, width = image.shape[:2]
+            if dashboard is not None and local_dashboard.STATE.wants_preview() and time.monotonic() - last_preview >= 0.5:
+                try:
+                    preview = cv2.resize(image, (640, max(1, int(height * 640 / width))))
+                    ok, jpeg = cv2.imencode('.jpg', preview, [cv2.IMWRITE_JPEG_QUALITY, 65])
+                    if ok:
+                        local_dashboard.STATE.set_frame(jpeg.tobytes())
+                    last_preview = time.monotonic()
+                except Exception:
+                    log.exception('Could not update dashboard preview')
             tensor = tf.convert_to_tensor(image)[tf.newaxis, ...]
             raw = detector(tensor)
             count = int(raw.pop("num_detections"))
@@ -115,6 +135,10 @@ def main():
         return 1
     finally:
         worker.close()
+        if dashboard is not None:
+            local_dashboard.ACTIVE.clear()
+            dashboard.shutdown()
+            dashboard.server_close()
         if camera is not None:
             try:
                 camera.close()

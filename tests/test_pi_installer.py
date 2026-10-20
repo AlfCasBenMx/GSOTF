@@ -215,7 +215,7 @@ class InstallerTests(unittest.TestCase):
             (source / 'deploy').mkdir()
             for name in installer.FILES + ('Config.example.xml', 'Instalar_LIPER.desktop'):
                 (source / name).write_text('example')
-            for name in ('pi_installer.py', 'pi_probe.py', 'requirements-pi4.txt', 'runtime.example.env', 'INSTALL_PI_ES.md', 'desktop_entry.py', 'install_desktop.sh'):
+            for name in ('pi_installer.py', 'pi_probe.py', 'requirements-pi4.txt', 'runtime.example.env', 'INSTALL_PI_ES.md', 'desktop_entry.py', 'install_desktop.sh', 'open_dashboard.py'):
                 (source / 'deploy' / name).write_text('example')
             (source / 'Config.xml').write_text('SECRET')
             (source / 'credentials-local').mkdir()

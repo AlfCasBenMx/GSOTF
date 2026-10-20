@@ -22,7 +22,7 @@ SOURCE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SOURCE))
 FILES = ('MainPlateGSF.py', 'MainHBGSF.py', 'LiPER_NNP.py', 'Send_HB.py',
          'StartSettings.py', 'HandlingEvents.py', 'runtime.py',
-         'SendNotifications.py', 'ocr_evidence.py', 'device_identity.py')
+         'SendNotifications.py', 'ocr_evidence.py', 'device_identity.py', 'local_dashboard.py')
 UNITS = ('gdf-reader.service', 'gdf-heartbeat.service')
 STEPS = {
     'COMMAND_STARTED': 'Iniciando etapa de instalacion',
@@ -184,7 +184,7 @@ def verify_manifest(source):
             if hashlib.sha256(p.read_bytes()).hexdigest() != expected:
                 return False
         required = set(FILES) | {'Config.example.xml', 'Instalar_LIPER.desktop', 'deploy/desktop_entry.py',
-                                  'deploy/install_desktop.sh', 'deploy/runtime.example.env',
+                                  'deploy/install_desktop.sh', 'deploy/open_dashboard.py', 'deploy/runtime.example.env',
                                   'deploy/pi_probe.py', 'deploy/pi_installer.py', 'deploy/requirements-pi4.txt',
                                   'label_map.pbtxt', 'saved_model/saved_model.pb',
                                   'saved_model/variables/variables.index'}
@@ -260,6 +260,21 @@ def find_environment(user, report, explicit=None):
     if explicit:
         raise Failure('EXPLICIT_ENVIRONMENT_INCOMPATIBLE')
     return None
+
+
+def install_dashboard_launcher(home, root, uid, gid):
+    # This runs in the user's graphical login, independently of the reader service.
+    for folder in (home / '.config', home / '.config/autostart', home / 'Desktop'):
+        if not folder.exists():
+            folder.mkdir(parents=True, mode=0o700)
+            os.chown(str(folder), uid, gid)
+    text = ('[Desktop Entry]\nType=Application\nName=LIPER - Camara y lecturas\n'
+            'Exec=/usr/bin/python3 ' + (root / 'deploy/open_dashboard.py').as_posix() + '\n'
+            'Terminal=false\nIcon=camera-video\n')
+    for target in (home / '.config/autostart/liper-dashboard.desktop', home / 'Desktop/LIPER-dashboard.desktop'):
+        target.write_text(text, encoding='utf-8')
+        target.chmod(0o755)
+        os.chown(str(target), uid, gid)
 
 
 def install(args, report):
@@ -341,6 +356,8 @@ def install(args, report):
         for name in UNITS:
             Path('/etc/systemd/system', name).write_text(unit(name, str(root), args.user, python, bool(selected_python)))
         run(['systemctl', 'daemon-reload'], report, 'SYSTEMD_RELOAD')
+        install_dashboard_launcher(Path(account.pw_dir), root, account.pw_uid, account.pw_gid)
+        report.add('DASHBOARD_DESKTOP', True)
     (root / 'installation.json').write_text(json.dumps({'state': 'installed_not_started', 'user': args.user, 'isolated_test': isolated,
                                                       'python': python, 'reuse_environment': bool(selected_python)}))
     report.add('INSTALLED_NOT_STARTED', True, detail='Configure credentials, run check --hardware, then start. Cleanup not installed.')

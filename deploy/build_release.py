@@ -22,7 +22,7 @@ def build(source, model_root, output):
         for name in FILES + ('Config.example.xml', 'Instalar_LIPER.desktop'):
             shutil.copy2(str(source / name), str(stage / name))
         (stage / 'deploy').mkdir()
-        for name in ('pi_installer.py', 'pi_probe.py', 'requirements-pi4.txt', 'runtime.example.env', 'INSTALL_PI_ES.md', 'desktop_entry.py', 'install_desktop.sh'):
+        for name in ('pi_installer.py', 'pi_probe.py', 'requirements-pi4.txt', 'runtime.example.env', 'INSTALL_PI_ES.md', 'desktop_entry.py', 'install_desktop.sh', 'open_dashboard.py'):
             shutil.copy2(str(source / 'deploy' / name), str(stage / 'deploy' / name))
         shutil.copytree(str(model_root / 'saved_model'), str(stage / 'saved_model'))
         shutil.copy2(str(model_root / 'label_map.pbtxt'), str(stage / 'label_map.pbtxt'))

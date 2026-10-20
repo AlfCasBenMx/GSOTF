@@ -35,3 +35,8 @@ sudo python3 /opt/gdf/deploy/pi_installer.py check --hardware --report-dir "$rep
 printf '\nArrancando lector y heartbeat...\n'
 sudo python3 /opt/gdf/deploy/pi_installer.py start --report-dir "$report_dir"
 printf '\nServicios instalados y habilitados. Revisar una lectura real cuando pase un vehiculo.\n'
+
+# Launch in the existing graphical session, never from the system service.
+if [ -n "${DISPLAY:-}" ]; then
+    python3 /opt/gdf/deploy/open_dashboard.py >/dev/null 2>&1 &
+fi
