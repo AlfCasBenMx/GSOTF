@@ -29,7 +29,7 @@ Para apagar el panel, definir `GDF_DASHBOARD=0` en `/opt/gdf/runtime.env` y rein
 
 ## Equipos que ya están instalados
 
-Publicar este cambio de código no actualiza por sí solo los equipos. Caucel4 se actualizó de forma controlada el 20 de octubre de 2026 (ver registro debajo); Caucel6 sigue pendiente. No volver a ejecutar el instalador nuevo sobre `/opt/gdf`. Para desplegar hay que respaldar la versión activa, copiar los archivos correspondientes a su ruta real, conservar `Config.xml`/`runtime.env` y datos/modelo, y reiniciar de forma controlada. La integración necesita `MainPlateGSF.py`, `LiPER_NNP.py` y `local_dashboard.py` de la misma versión; el lanzador gráfico necesita `deploy/open_dashboard.py`.
+Publicar este cambio de código no actualiza por sí solo los equipos. Caucel4 y Caucel6 se actualizaron de forma controlada el 20 de octubre de 2026 (ver registros debajo). No volver a ejecutar el instalador nuevo sobre `/opt/gdf`. Para desplegar hay que respaldar la versión activa, copiar los archivos correspondientes a su ruta real, conservar `Config.xml`/`runtime.env` y datos/modelo, y reiniciar de forma controlada. La integración necesita `MainPlateGSF.py`, `LiPER_NNP.py` y `local_dashboard.py` de la misma versión; el lanzador gráfico necesita `deploy/open_dashboard.py`.
 
 Después verificar servicios, primer fotograma, panel local y una lectura real. Hasta entonces no considerar certificado el consumo de CPU, latencia ni funcionamiento de cámara real de esta versión.
 
@@ -45,3 +45,22 @@ Después verificar servicios, primer fotograma, panel local y una lectura real. 
 - Al terminar, el panel tenía cero lecturas en la nueva sesión. Quedan pendientes una nueva placa real, su tarjeta y la entrega a Genyus; no se reenviaron placas históricas para esta prueba. No se certificó aún consumo sostenido de CPU.
 
 El respaldo contiene secretos: no publicarlo ni adjuntarlo a paquetes públicos. Para revertir, detener ambos servicios, devolver `previous-installation` a su ruta anterior y restaurar las unidades guardadas; antes revisar rutas y estado actual. Restaurar el lanzador del escritorio según la versión que quede activa. No arrancar simultáneamente los dos lectores ni borrar las carpetas de fotos.
+
+## Registro de actualización de Caucel6 — 20 de octubre de 2026
+
+- Acceso por SSH desde la laptop mediante Caucel4, con clave pública autorizada por el usuario en Caucel6. No se copió la clave privada al puente. La identidad SSH del destino se verificó contra la huella observada previamente.
+- Se respaldó y sustituyó `/opt/gdf` por la versión con panel `24d47c1`, manteniendo modelo, claves y configuración del monitor del equipo. Los servicios anteriores se detuvieron durante el cambio.
+- Respaldo privado: `/home/pi/backups/dashboard-update-20261020-170812`, con unidades anteriores, código/configuración y `previous-installation`.
+- Las carpetas activas SavedPlates, ErrorOCR y OCREvidence se movieron sin copiar ni borrar imágenes a `/home/pi/.local/share/liper-data/`, con enlaces desde la aplicación nueva y la copia anterior. Los datos quedan separados del programa. El directorio histórico del escritorio no se eliminó.
+- Lector y heartbeat activos, habilitados y sin reinicios durante la comprobación; un solo proceso lector. Cámara real reciente y JPEG del panel verificados con HTTP 200. Chromium abierto en la sesión gráfica.
+- Acceso `/home/pi/Desktop/LIPER-dashboard.desktop` y autoinicio gráfico instalados. El cliente usa doble clic en **LIPER - Camara y lecturas**.
+- El log de la nueva sesión confirmó tres heartbeats aceptados por el monitor y cero fallos de destino al comprobarlo. Las tarjetas empezaron vacías; falta comprobar una placa real de esta sesión y su entrega a Genyus.
+- No se realizó una prueba de corte físico de energía ni de desconexión de internet durante la actualización.
+
+Para revertir Caucel6, detener los dos servicios y conservar aparte la aplicación nueva antes de devolver `previous-installation` a `/opt/gdf`. Mantener la carpeta de datos permanente y sus enlaces: restaurar solo el archivo de código no reconstruye por sí solo el estado de las imágenes. Revisar también las unidades y accesos del escritorio antes de arrancar.
+
+## Cortes de energía o internet
+
+Los servicios habilitados intentan arrancar automáticamente cuando la Raspberry vuelve a encender. Durante un corte de energía no hay captura. El panel gráfico se abre al iniciar sesión en el escritorio; el lector no necesita navegador para operar.
+
+Sin internet, la captura/detección y el panel local pueden continuar, pero el OCR de Azure, la entrega a Genyus y el monitor remoto requieren conectividad. El heartbeat vuelve a intentar en sus ciclos posteriores; las nuevas lecturas vuelven a intentar los servicios cuando hay conexión. No hay cola persistente para garantizar el reprocesamiento y la entrega de eventos fallidos. Guardar una imagen de error no implica que después se reenvíe automáticamente.
