@@ -29,6 +29,19 @@ Para apagar el panel, definir `GDF_DASHBOARD=0` en `/opt/gdf/runtime.env` y rein
 
 ## Equipos que ya están instalados
 
-Este cambio de código no actualiza por sí solo Caucel4 ni Caucel6. No volver a ejecutar el instalador nuevo sobre `/opt/gdf`. Para desplegar hay que respaldar la versión activa, copiar los archivos correspondientes a su ruta real, conservar `Config.xml`/`runtime.env` y datos/modelo, y reiniciar de forma controlada. La integración necesita `MainPlateGSF.py`, `LiPER_NNP.py` y `local_dashboard.py` de la misma versión; el lanzador gráfico necesita `deploy/open_dashboard.py`.
+Publicar este cambio de código no actualiza por sí solo los equipos. Caucel4 se actualizó de forma controlada el 20 de octubre de 2026 (ver registro debajo); Caucel6 sigue pendiente. No volver a ejecutar el instalador nuevo sobre `/opt/gdf`. Para desplegar hay que respaldar la versión activa, copiar los archivos correspondientes a su ruta real, conservar `Config.xml`/`runtime.env` y datos/modelo, y reiniciar de forma controlada. La integración necesita `MainPlateGSF.py`, `LiPER_NNP.py` y `local_dashboard.py` de la misma versión; el lanzador gráfico necesita `deploy/open_dashboard.py`.
 
 Después verificar servicios, primer fotograma, panel local y una lectura real. Hasta entonces no considerar certificado el consumo de CPU, latencia ni funcionamiento de cámara real de esta versión.
+
+## Registro de actualización de Caucel4 — 20 de octubre de 2026
+
+- Aplicación activa: `/opt/gdf`, versión del panel `24d47c1`. Antes estaba en `/opt/gdf-test-reuse-20261018`.
+- Se conservaron el modelo, `Config.xml` y `runtime.env` del equipo. Se habilitó `GDF_DASHBOARD=1`.
+- Fotos y evidencia siguen en `/home/pi/Desktop/GDF/{SavedPlates,ErrorOCR,OCREvidence}`, enlazadas desde la aplicación activa. Limpieza automática desactivada.
+- Respaldo privado: `/home/pi/backups/dashboard-update-20261020-111925`. Incluye unidades de servicio anteriores, archivo de código/configuración y `previous-installation` (la instalación retirada). `legacy-desktop-code` contiene los 27 elementos de código/modelo retirados del antiguo directorio del escritorio; las carpetas de imágenes permanecieron allí.
+- Servicios del lector y heartbeat activos, habilitados y sin reinicios durante la comprobación. Solo un proceso lector.
+- Cámara real: fotograma reciente verificado; vista JPEG y API del panel respondieron HTTP 200 por loopback. El navegador Chromium arrancó en la sesión gráfica.
+- Iconos creados: `/home/pi/Desktop/LIPER-dashboard.desktop` y `/home/pi/.config/autostart/liper-dashboard.desktop`, propiedad de `pi`, ejecutables. El cliente abre el icono **LIPER - Camara y lecturas** con doble clic.
+- Al terminar, el panel tenía cero lecturas en la nueva sesión. Quedan pendientes una nueva placa real, su tarjeta y la entrega a Genyus; no se reenviaron placas históricas para esta prueba. No se certificó aún consumo sostenido de CPU.
+
+El respaldo contiene secretos: no publicarlo ni adjuntarlo a paquetes públicos. Para revertir, detener ambos servicios, devolver `previous-installation` a su ruta anterior y restaurar las unidades guardadas; antes revisar rutas y estado actual. Restaurar el lanzador del escritorio según la versión que quede activa. No arrancar simultáneamente los dos lectores ni borrar las carpetas de fotos.
